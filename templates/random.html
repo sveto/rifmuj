@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block body %}
+<div id="innerContent">
+<div id="tables-or-not-found">
+   <br>
+   {% for table in tables %}
+      <table id="result_table">
+         <caption>
+            {{ table.caption }}
+         </caption>
+         {% include table.pos + ".html" %}
+      </table>
+      <br>
+   {% else %}
+      <div id="word-not-found">
+         Реч&nbsp;„{{ tables.input }}”&nbsp;није&nbsp;пронађена 😞
+      </div>
+   {% endfor %}
+</div>
+</div>
+{% endblock %}

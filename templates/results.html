@@ -1,0 +1,23 @@
+{% extends "search.html" %}
+{% block tytle %}{{ inputword }} – {% endblock %}
+
+{% block results %}
+<div id="tables-or-not-found">
+   {% if tables|length > 1 %}
+      Найдено <b>{{ tables|length }}</b> результатов:<br><br>
+   {% endif %}
+   
+      <table id="result_table">
+         {% for word in tables %}      
+         <tr><td>{{ word }}</td></tr>
+      </table><br>
+   {% else %}
+   <tr><td>
+      <div id="word-not-found">
+         Рифмы&nbsp;на&nbsp;слово&nbsp;„{{ inputword }}”&nbsp;не&nbsp;найдены 😞
+      </div>
+      <br>
+   </td></tr>
+   {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block body %}
+
+<div id="innerContent">
+<form id="search">
+   <table id="header">
+      <tr>
+         <td id="left">
+            <a href="/about">Что это за сайт?</a>
+         </td>
+         <td id="right">
+            <a href="/random">Случайное слово</a>
+         </td>   
+      </tr>
+   </table>
+   <table id="main">
+      <tr>
+         <td>
+            <div id="searchBox">
+               <input type="text" id="word"/>
+               <input type="submit" id="button" value="Искать!"/>
+            </div>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            <div id="options">
+               <fieldset>
+                  <legend>Параметры:</legend><br>
+                  <label><input type="checkbox" name="xj">игнор конечных й (глухо~мухой)</label><br>
+                  <label><input type="checkbox" name="zv">игнор звонкости/глухости (ленты~бренды)</label><br>
+                  <label><input type="checkbox" name="uu">игнор безударного "у" (картина~гардину)</label><br>
+                  <label><input type="checkbox" name="yy">игнор безударного "ы" (картина~гардины)</label><br>
+                  <label><input type="number" name="nu" value="0" min="0" max="10">лишних звуков перед рифмой</label>
+               </fieldset>
+            </div>
+         </td>
+      </tr>
+   </table>
+</form>
+<div id="results">
+   {% block results %}
+   {% endblock %}
+</div>
+<script src="{{ url_for('static', filename='index.js') }}"></script>
+<script>$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
+</div>
+{% endblock %}
