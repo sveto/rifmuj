@@ -5,3 +5,5 @@ __pycache__
 .ipynb_checkpoints
 data/hagen-morph.txt
 data/abcd.sqlite
+data/abcd.sqlite.backup
+profile*.dat

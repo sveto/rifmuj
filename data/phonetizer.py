@@ -14,17 +14,22 @@ consonants = 'бвгджзклмнрпстфхцчшщ'
 consonants_j = consonants + 'й'
 consonants_for_e = 'бвгдзклмнрпстфх'
 vowels = 'аэиоу'
-pairs = {'б': 'п','в': 'ф','г': 'к','д': 'т','ж': 'ш','з': 'с'}
-pairs_r = {'п': 'б','ф': 'в','к': 'г','т': 'д','ш': 'ж','с': 'з'}
+pairs = {'б': 'п', 'в': 'ф', 'г': 'к', 'д': 'т', 'ж': 'ш', 'з': 'с'}
+pairs_r = {'п': 'б', 'ф': 'в', 'к': 'г', 'т': 'д', 'ш': 'ж', 'с': 'з'}
 unpaired = "чцщх"
 transform = {}
+transform2 = {}
+
 for x in pairs:
     for y in pairs.values():
-        transform[x+y] = pairs[x]+y
+        transform[x + y] = pairs[x] + y
         if x != 'в':
-            transform[y+x] = pairs_r[y]+x
+            transform[y + x] = pairs_r[y] + x
     for y in unpaired:
-        transform[x+y] = pairs[x]+y
+        transform[x + y] = pairs[x] + y
+
+for c in consonants_j:
+    transform2[c + c] = c
 
 def phonetize(word: str) -> str:
     #word = word.lower().strip().replace("'", "_")
@@ -45,7 +50,7 @@ def phonetize(word: str) -> str:
     word = rsub(f'([^{consonants}])я', '\\1йа', word)
     word = rsub(f'([^{consonants}])ю', '\\1йу', word)
     word = rsub(f'([^{consonants}])ё', '\\1йо', word)
-    word = rsub('ьо', 'ьйо', word)
+    word = word.replace('ьо', 'ьйо')
     word = rsub(f'([^{consonants}])е', '\\1йэ', word)
     word = word.replace('я', 'ьа')
     word = word.replace('ю', 'ьу')
@@ -63,17 +68,17 @@ def phonetize(word: str) -> str:
     word = rsub('э$', 'и', word)
     word = rsub('([чшщжй])а', '\\1и', word)
 
-    for t in transform:
-        word = word.replace(t, transform[t])
+    for s1, s2 in transform.items():
+        word = word.replace(s1, s2)
 
-    for c in consonants_j:
-        word = word.replace(c+c, c)
+    for s1, s2 in transform2.items():
+        word = word.replace(s1, s2)
 
     word = word.replace('тс', 'ц')
     word = rsub('[сш]ч', 'щ', word)
 
-    for c in pairs:
-        word = rsub(f'{c}$', pairs[c], word)
+    for c1, c2 in pairs.items():
+        word = rsub(f'{c1}$', c2, word)
 
     return word
 
