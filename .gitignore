@@ -3,5 +3,5 @@ __pycache__
 .pytest_cache
 .vscode
 .ipynb_checkpoints
-sources/zznj.txt
-sources/abcd.sqlite
+data/allwords.txt
+data/abcd.sqlite
