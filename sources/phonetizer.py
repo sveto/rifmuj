@@ -1,11 +1,12 @@
 from typing import List, Tuple
 from re import sub as rsub
+import more_itertools as mit
 from sqlalchemy import create_engine, Table, Column, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
-engine = create_engine('sqlite:///abcd.sqlite', echo=True)
+engine = create_engine('sqlite:///abcd.sqlite', echo=False)
 
 consonants = 'бвгджзклмнрпстфхцчшщ'
 consonants_j = consonants + 'й'
@@ -87,30 +88,35 @@ class TransWord(Base):
     def __repr__(self):
         return f"{self.word}: {self.trans}"
 
+
+def getEntries():
+    with open('zznj.txt', encoding='windows-1251') as file:
+        for line in file:
+            parts = line.split('|')
+            if len(parts) > 2:
+                word = parts[2].strip().lower().replace("'", "_")
+                trans = phonetize(word)
+                yield TransWord(word, trans)
+
+
 if __name__ == "__main__":
 
     Base.metadata.create_all(engine)
 
     Session = sessionmaker(bind=engine)
     session = Session()
-
-
-    with open('zznj.txt', encoding='windows-1251') as file:
-        count = 0
-        for text in file:
-            if text:
-                texts = text.split('|')
-                if len(texts) > 2:
-                    count += 1
-                    word1 = texts[2].lower().strip().replace("'", "_")
-                    word2 = phonetize(word1)
-                    if ',' in word2:
-                        print(word2)
-                    myWord = TransWord(word1, word2)
-                    if len(session.query(TransWord).filter(TransWord.word.in_([word1])).all()) == 0:
-                        session.add(myWord)
-                if count % 10000 == 0:
-                    session.commit()
-
+    
+    # clearing the db table
+    session.query(TransWord).delete()
     session.commit()
-
+    
+    # getting entries from file
+    entries = getEntries()
+    unique_entries = mit.unique_everseen(entries, lambda e: e.word)
+    
+    # populating the db table
+    chunks = mit.chunked(unique_entries, 100000)  
+    for index, chunk in enumerate(chunks):
+        print(f'chunk {index}...')
+        session.bulk_save_objects(chunk)
+        session.commit()
