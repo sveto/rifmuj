@@ -3,5 +3,5 @@ __pycache__
 .pytest_cache
 .vscode
 .ipynb_checkpoints
-data/allwords.txt
+data/hagen-morph.txt
 data/abcd.sqlite

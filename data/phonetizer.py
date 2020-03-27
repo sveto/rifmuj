@@ -111,7 +111,7 @@ def ensure_id(raw_id: str, line: str) -> int:
     return id_
 
 def getEntries() -> Iterable[TransWord]:
-    with open('allwords.txt', encoding='windows-1251') as file:
+    with open('hagen-morph.txt', encoding='windows-1251') as file:
         for line in file:
             parts = line.split('|')
             if len(parts) > 2:
@@ -126,7 +126,8 @@ def getEntries() -> Iterable[TransWord]:
 
 
 if __name__ == "__main__":
-    print(f"Started: {datetime.now(timezone.utc)}")
+    started = datetime.now(timezone.utc)
+    print(f"Started: {started}")
 
     Base.metadata.create_all(engine)
 
@@ -147,4 +148,6 @@ if __name__ == "__main__":
         session.bulk_save_objects(chunk)
         session.commit()
 
-    print(f"Stopped: {datetime.now(timezone.utc)}")
+    stopped = datetime.now(timezone.utc)
+    print(f"Stopped: {stopped}")
+    print(f"Elapsed: {stopped - started}")
