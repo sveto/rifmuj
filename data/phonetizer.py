@@ -5,6 +5,7 @@ import more_itertools as mit
 from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from datetime import datetime, timezone
 
 Base = declarative_base()
 engine = create_engine('sqlite:///abcd.sqlite', echo=False)
@@ -125,6 +126,7 @@ def getEntries() -> Iterable[TransWord]:
 
 
 if __name__ == "__main__":
+    print(f"Started: {datetime.now(timezone.utc)}")
 
     Base.metadata.create_all(engine)
 
@@ -144,3 +146,5 @@ if __name__ == "__main__":
         print(f'chunk {index}... ({chunk[0].word} — {chunk[-1].word})')
         session.bulk_save_objects(chunk)
         session.commit()
+
+    print(f"Stopped: {datetime.now(timezone.utc)}")
