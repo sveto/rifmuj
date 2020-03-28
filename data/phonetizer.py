@@ -1,11 +1,13 @@
 """Makes the database from the plaintext dictionary."""
-from typing import List, Tuple, Iterable, Dict
+
+from typing import List, Tuple, Iterable, Dict, Set, Optional
 from re import sub as rsub
 import more_itertools as mit
+import multiprocessing as mp
 from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timezone
+from datetime import datetime
 
 Base = declarative_base()
 engine = create_engine('sqlite:///abcd.sqlite', echo=False)
@@ -104,6 +106,7 @@ class TransWord(Base): # type: ignore
 
 
 # Checking IDs for uniqueness:
+# (is not currently used!)
 ids: Dict[int, str] = dict()
 def ensure_id(raw_id: str, line: str) -> int:
     if not raw_id.isdecimal():
@@ -115,23 +118,23 @@ def ensure_id(raw_id: str, line: str) -> int:
     ids[id_] = line
     return id_
 
-def getEntries() -> Iterable[TransWord]:
-    with open('hagen-morph.txt', encoding='windows-1251') as file:
-        for line in file:
-            parts = line.split('|')
-            if len(parts) > 2:
-                raw_word = parts[0].strip().lower()
-                starred = raw_word.startswith('*')
-                word = raw_word[1:] if starred else raw_word
-                gram = f" {parts[1].strip().lower()} "
-                raw_trans = parts[2].strip().lower().replace("'", "_")
-                trans = phonetize(raw_trans)
-                word_id = ensure_id(parts[-1].strip(), line.strip())
-                yield TransWord(word, gram, trans, word_id, starred)
+def lineToWord(line: str) -> Optional[TransWord]:
+    parts = line.split('|')
+    if len(parts) >= 4:
+        raw_word = parts[0].strip().lower()
+        starred = raw_word.startswith('*')
+        word = raw_word[1:] if starred else raw_word
+        gram = f" {parts[1].strip().lower()} "
+        raw_trans = parts[2].strip().lower().replace("'", "_")
+        trans = phonetize(raw_trans)
+        word_id = int(parts[-1].strip())
+        return TransWord(word, gram, trans, word_id, starred)
+    else:
+        return None
 
 
 if __name__ == "__main__":
-    started = datetime.now(timezone.utc)
+    started = datetime.now()
     print(f"Started: {started}")
 
     Base.metadata.create_all(engine)
@@ -139,20 +142,22 @@ if __name__ == "__main__":
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    # clearing the db table
+    print('Clearing the db table...')
     session.query(TransWord).delete()
+
+    print('Populating the db table from the dictionary file:')
+    with open('hagen-morph.txt', encoding='windows-1251') as file:
+        with mp.Pool() as pool:
+            optWords = pool.imap_unordered(lineToWord, file, chunksize=1_000)
+            words = (word for word in optWords if word is not None)
+            chunks = mit.chunked(words, 100_000)
+            for index, chunk in enumerate(chunks):
+                print(f' chunk {index} ({chunk[0].word} — {chunk[-1].word})...')
+                session.bulk_save_objects(chunk)
+    
+    print('Committing data into the db...')
     session.commit()
-
-    # getting entries from file
-    entries = getEntries()
-
-    # populating the db table
-    chunks = mit.chunked(entries, 100000)  
-    for index, chunk in enumerate(chunks):
-        print(f'chunk {index}... ({chunk[0].word} — {chunk[-1].word})')
-        session.bulk_save_objects(chunk)
-        session.commit()
-
-    stopped = datetime.now(timezone.utc)
-    print(f"Stopped: {stopped}")
-    print(f"Elapsed: {stopped - started}")
+    
+    finished = datetime.now()
+    print(f"Finished: {finished}")
+    print(f"Elapsed: {finished - started}")
