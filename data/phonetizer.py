@@ -109,65 +109,65 @@ def phonetize(raw_trans: str) -> str:
 
 class TransWord(Base): # type: ignore
     __tablename__ = 'main'
-    word = Column(String)
-    gram = Column(String)
-    trans = Column(String)
     word_id = Column(Integer, primary_key=True)
-    starred = Column(Boolean)
+    word = Column(String)
+    trans = Column(String)
+    gram = Column(String)
 
-    def __init__(self, word: str, gram: str, trans: str, word_id: int, starred: bool) -> None:
-        self.word = word
-        self.gram = gram
-        self.trans = trans
+    def __init__(self, word_id: int, word: str, trans: str, gram: str) -> None:
         self.word_id = word_id
-        self.starred = starred
+        self.word = word
+        self.trans = trans
+        self.gram = gram
 
     def __repr__(self) -> str:
-        star = '*' if self.starred else ''
-        return f"#{self.word_id} {star}{self.word}: {self.trans} [{self.gram.strip()}]"
+        return f'#{self.word_id} {self.word}: {self.trans} [{self.gram.strip()}]'
 
 
-def lineToWord(line: str) -> Optional[TransWord]:
-    parts = line.split('|')
-    if len(parts) >= 4:
-        raw_word = parts[0].strip().lower()
-        starred = raw_word.startswith('*')
-        word = raw_word[1:] if starred else raw_word
-        gram = parts[1]
-        raw_trans = parts[2].strip().lower()
-        trans = phonetize(raw_trans)
-        word_id = int(parts[-1].strip())
-        return TransWord(word, gram, trans, word_id, starred)
-    else:
-        return None
+usable_form_pattern = re.compile(r"^\s*[^\s*]")  # form does not start with ‘*’
+
+def stripArticle(article: List[List[str]]) -> Iterable[List[str]]:
+    """Removes unused (marked with *) and identical forms from an article."""
+    usable_forms = (row for row in article if usable_form_pattern.match(row[0]))
+    unique_forms = mit.unique_everseen(usable_forms, lambda row: row[2])
+    return unique_forms
+
+def rowToWord(row: List[str]) -> TransWord:
+    return TransWord(
+        word_id = int(row[-1].strip()),
+        word = row[0].strip().lower(),
+        trans = phonetize(row[2].strip().lower()),
+        gram = row[1]
+    )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     started = datetime.now()
-    print(f"Started: {started}")
-
+    print(f'Started: {started}')
+    
     Base.metadata.create_all(engine)
-
     Session = sessionmaker(bind=engine)
     session = Session()
-
+    
     print('Clearing the db table...')
     session.query(TransWord).delete()
-
+    
     print('Populating the db table from the dictionary file:')
     with open('hagen-morph.txt', encoding='windows-1251') as file:
-        # with mp.Pool() as pool:
-        #     optWords = pool.imap_unordered(lineToWord, file, chunksize=1_000)
-            optWords = map(lineToWord, file)
-            words = (word for word in optWords if word is not None)
-            chunks = mit.chunked(words, 100_000)
-            for index, chunk in enumerate(chunks):
-                print(f' chunk {index} ({chunk[0].word} — {chunk[-1].word})...')
-                session.bulk_save_objects(chunk)
+        rows = (line.split('|') for line in file)
+        articles = mit.split_at(rows, lambda row: len(row) < 4)
+        stripped_articles = map(stripArticle, articles)
+        stripped_article_rows = (row for article in stripped_articles for row in article)
+        words = map(rowToWord, stripped_article_rows)
+        
+        chunks = mit.chunked(words, 100_000)
+        for index, chunk in enumerate(chunks):
+            print(f' chunk {index} ({chunk[0].word} — {chunk[-1].word})...')
+            session.bulk_save_objects(chunk)
     
     print('Committing data into the db...')
     session.commit()
     
     finished = datetime.now()
-    print(f"Finished: {finished}")
-    print(f"Elapsed: {finished - started}")
+    print(f'Finished: {finished}')
+    print(f'Elapsed: {finished - started}')
