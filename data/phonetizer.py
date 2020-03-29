@@ -1,7 +1,9 @@
 """Makes the database from the plaintext dictionary."""
 
-from typing import List, Tuple, Iterable, Dict, Set, Optional
-from re import sub as rsub
+from typing import List, Tuple, Iterable, Dict, Set, Optional, Callable
+import re
+import functools as ft
+import itertools as it
 import more_itertools as mit
 import multiprocessing as mp
 from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean
@@ -12,77 +14,97 @@ from datetime import datetime
 Base = declarative_base()
 engine = create_engine('sqlite:///abcd.sqlite', echo=False)
 
-consonants = 'бвгджзклмнрпстфхцчшщ'
-consonants_j = consonants + 'й'
-consonants_for_e = 'бвгдзклмнрпстфх'
-vowels = 'аэиоу'
-pairs = {'б': 'п', 'в': 'ф', 'г': 'к', 'д': 'т', 'ж': 'ш', 'з': 'с'}
-pairs_r = {'п': 'б', 'ф': 'в', 'к': 'г', 'т': 'д', 'ш': 'ж', 'с': 'з'}
-unpaired = "чцщх"
-transform = {}
-transform2 = {}
 
-for x in pairs:
-    for y in pairs.values():
-        transform[x + y] = pairs[x] + y
-        if x != 'в':
-            transform[y + x] = pairs_r[y] + x
-    for y in unpaired:
-        transform[x + y] = pairs[x] + y
+bounds = ' ,-'
+accents = "'`"
+plainVows   = 'ыэаоу'
+jotVows     = 'иеяёю'
+vowPhonemes = 'иэаоу'
+signs = 'ъь'
+sonorantCons = 'ймнлр'
+unpairedUnvoicedCons = 'хцчщ'
+pairedVoicedCons   = 'вбзджг'
+pairedUnvoicedCons = 'фпстшк'
+softOnlyCons = 'йчщ'
+hardOnlyCons = 'жшц'
 
-for c in consonants_j:
-    transform2[c + c] = c
+vows = plainVows + jotVows
+cons = sonorantCons + pairedVoicedCons + unpairedUnvoicedCons + pairedUnvoicedCons
+softableCons = [c for c in cons if c not in hardOnlyCons]
+voiceableCons = pairedUnvoicedCons + pairedUnvoicedCons.upper()
+unvoiceableCons = pairedVoicedCons + pairedVoicedCons.upper()
+voicingCons = pairedVoicedCons[1:] + pairedVoicedCons[1:].upper()  # without ‘в’
+unvoicingCons = unpairedUnvoicedCons + unpairedUnvoicedCons.upper() + voiceableCons
 
-def phonetize(word: str) -> str:
-    #word = word.lower().strip().replace("'", "_")
+def change(from_: str, to: str) -> Callable[[str], str]:
+    changingDict = {key: value for key, value in zip(from_, to)}
+    return lambda s: changingDict[s]
 
-    if word not in ["мно_го", "немно_го", "премно_го", "намно_го", "ненамно_го",
-        "стро_го", "нестро_го", "на_строго", "убо_го"]:
-        word = rsub("о(_?)го$", "о\\1во", word)
+phonemize = change(vows, vowPhonemes + vowPhonemes)
+reductLess = change(vowPhonemes, 'ииаау')
+reductMore = change(vowPhonemes, 'ииииу')
+voice = change(voiceableCons, unvoiceableCons)
+unvoice = change(unvoiceableCons, voiceableCons)
 
-    word = rsub("(чу_?)в(ств)", "\\1\\2", word)
-    word = rsub("(здра_?)в(ств)", "\\1\\2", word)
 
-    word = word.replace("действи", "дистви")
-    word = word.replace("рейту", "риту")
-    word = word.replace("сейча", "сича")
+class PhonTransform:
+    def __init__(self, searchPattern: str, *rules: Dict[str, str]) -> None:
+        self.searchPattern = re.compile(searchPattern, re.VERBOSE)
+        ruleDict = {k: v for rule in rules for k, v in rule.items()}
+        self.ruleFunc = lambda match: ruleDict[match.group()]
+    
+    def applyTo(self, word: str) -> str:
+        return self.searchPattern.sub(self.ruleFunc, word)
 
-    word = word.replace("лнц", "нц").replace("стн", "сн").replace("здн", "зн").replace("стк", "ск").replace("здк", "ск")
+phonTransforms = [
+    # softness and stress
+    PhonTransform(
+        rf"""[{cons}]?[{vows}{signs}][{accents}]?  # optional consonant, then, vowel or sign, then, optional accent
+           | [{softOnlyCons}]                      # soft-only consonant that should be uppercased """,
+        # vowel:
+        {f'{v}{a}': f'{phonemize(v).upper()}' for v in plainVows for a in accents},
+        {f'{jv}{a}': f'Й{phonemize(jv).upper()}' for jv in jotVows for a in accents},
+        {f'{v}': f'{reductLess(phonemize(v))}' for v in plainVows},
+        {f'{jv}': f'Й{reductMore(phonemize(jv))}' for jv in jotVows},
+        # vowel + consonant:
+        {f'{c}{v}{a}': f'{c}{phonemize(v).upper()}' for c in cons for v in vows for a in accents},
+        {f'{sc}{jv}{a}': f'{sc.upper()}{phonemize(jv).upper()}' for sc in softableCons for jv in jotVows for a in accents},
+        {f'{soc}{v}{a}': f'{soc.upper()}{phonemize(v).upper()}' for soc in softOnlyCons for v in vows for a in accents},
+        {f'{c}{v}': f'{c}{reductLess(phonemize(v))}' for c in cons for v in vows},
+        {f'{sc}{jv}': f'{sc.upper()}{reductMore(phonemize(jv))}' for sc in softableCons for jv in jotVows},
+        {f'{soc}{v}': f'{soc.upper()}{reductMore(phonemize(v))}' for soc in softOnlyCons for v in vows},
+        # consonant:
+        {f'{c}{s}': f'{c}' for c in cons for s in signs},
+        {f'{sc}ь': f'{sc.upper()}' for sc in softableCons},
+        {f'{soc}{s}': f'{soc.upper()}' for soc in softOnlyCons for s in signs},
+        {f'{soc}': f'{soc.upper()}' for soc in softOnlyCons},
+        # incorrect formating in the file:
+        {f'{s}': f'' for s in signs},
+        {f'{s}{a}': f'' for s in signs for a in accents},
+        {f'{c}{s}{a}': f'{c}' for c in cons for s in signs for a in accents}
+    ),
+    # voicing and cluster simplification
+    PhonTransform(
+        rf"""[{voiceableCons}]{{1,2}}(?=[{voicingCons}])         # unvoiced cluster before a voicing consonant
+           | [{unvoiceableCons}]{{1,2}}(?=[{unvoicingCons}]|\b)  # voiced cluster before an unvoicing consonant or word-finally
+           # TODO: cluster simplification """,
+        # voicing:
+        {f'{c}': f'{voice(c)}' for c in voiceableCons},
+        {f'{c1}{c2}': f'{voice(c1)}{voice(c2)}' for c1 in voiceableCons for c2 in voiceableCons},
+        # unvoicing:
+        {f'{c}': f'{unvoice(c)}' for c in unvoiceableCons},
+        {f'{c1}{c2}': f'{unvoice(c1)}{unvoice(c2)}' for c1 in unvoiceableCons for c2 in unvoiceableCons},
+        # cluster simplification:
+        # TODO
+    )
+]
 
-    word = rsub(f'([^{consonants}])я', '\\1йа', word)
-    word = rsub(f'([^{consonants}])ю', '\\1йу', word)
-    word = rsub(f'([^{consonants}])ё', '\\1йо', word)
-    word = word.replace('ьо', 'ьйо')
-    word = rsub(f'([^{consonants}])е', '\\1йэ', word)
-    word = word.replace('я', 'ьа')
-    word = word.replace('ю', 'ьу')
-    word = rsub(f'([{consonants_for_e}])ё', '\\1ьо', word)
-    word = word.replace("ё", "о")
-    word = rsub(f'([{consonants_for_e}])е', '\\1ьэ', word)
-    word = word.replace('е', 'э')
-    word = rsub('([аэиыоу])и', '\\1йи', word)
-    word = rsub(f'([{consonants_for_e}])и', '\\1ьи', word)
-    word = word.replace('ы', 'и')
+# TODO: allow exceptions from this rule!
+ogoPattern = re.compile(r"((?:о|е)'?)г(о'?(?:ся)?)$")
 
-    word = rsub('о([^_`])', 'а\\1', word)
-    word = rsub('э([^_])', 'и\\1', word)
-    word = rsub('о$', 'а', word)
-    word = rsub('э$', 'и', word)
-    word = rsub('([чшщжй])а', '\\1и', word)
-
-    for s1, s2 in transform.items():
-        word = word.replace(s1, s2)
-
-    for s1, s2 in transform2.items():
-        word = word.replace(s1, s2)
-
-    word = word.replace('тс', 'ц')
-    word = rsub('[сш]ч', 'щ', word)
-
-    for c1, c2 in pairs.items():
-        word = rsub(f'{c1}$', c2, word)
-
-    return word
+def phonetize(raw_trans: str) -> str:
+    raw_trans = ogoPattern.sub(r"\1в\2", raw_trans)
+    return ft.reduce(lambda w, t: t.applyTo(w), phonTransforms, raw_trans)
 
 
 class TransWord(Base): # type: ignore
@@ -102,21 +124,8 @@ class TransWord(Base): # type: ignore
 
     def __repr__(self) -> str:
         star = '*' if self.starred else ''
-        return f"#{self.word_id} {star}{self.word}: {self.trans} [{self.gram.trim()}]"
+        return f"#{self.word_id} {star}{self.word}: {self.trans} [{self.gram.strip()}]"
 
-
-# Checking IDs for uniqueness:
-# (is not currently used!)
-ids: Dict[int, str] = dict()
-def ensure_id(raw_id: str, line: str) -> int:
-    if not raw_id.isdecimal():
-        print(f"[id] not decimal: {raw_id}. Line: {line}")
-    id_ = int(raw_id, base=10)
-    if id_ in ids:
-        print(f"[id] not unique. Line: {line}")
-        print(f"[id] original id line: {ids[id_]}")
-    ids[id_] = line
-    return id_
 
 def lineToWord(line: str) -> Optional[TransWord]:
     parts = line.split('|')
@@ -124,8 +133,8 @@ def lineToWord(line: str) -> Optional[TransWord]:
         raw_word = parts[0].strip().lower()
         starred = raw_word.startswith('*')
         word = raw_word[1:] if starred else raw_word
-        gram = f" {parts[1].strip().lower()} "
-        raw_trans = parts[2].strip().lower().replace("'", "_")
+        gram = parts[1]
+        raw_trans = parts[2].strip().lower()
         trans = phonetize(raw_trans)
         word_id = int(parts[-1].strip())
         return TransWord(word, gram, trans, word_id, starred)
@@ -147,8 +156,9 @@ if __name__ == "__main__":
 
     print('Populating the db table from the dictionary file:')
     with open('hagen-morph.txt', encoding='windows-1251') as file:
-        with mp.Pool() as pool:
-            optWords = pool.imap_unordered(lineToWord, file, chunksize=1_000)
+        # with mp.Pool() as pool:
+        #     optWords = pool.imap_unordered(lineToWord, file, chunksize=1_000)
+            optWords = map(lineToWord, file)
             words = (word for word in optWords if word is not None)
             chunks = mit.chunked(words, 100_000)
             for index, chunk in enumerate(chunks):
