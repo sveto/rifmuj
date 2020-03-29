@@ -126,13 +126,13 @@ class TransWord(Base): # type: ignore
 
 usable_form_pattern = re.compile(r"^\s*[^\s*]")  # form does not start with ‘*’
 
-def stripArticle(article: List[List[str]]) -> Iterable[List[str]]:
+def strip_article(article: List[List[str]]) -> Iterable[List[str]]:
     """Removes unused (marked with *) and identical forms from an article."""
     usable_forms = (row for row in article if usable_form_pattern.match(row[0]))
     unique_forms = mit.unique_everseen(usable_forms, lambda row: row[2])
     return unique_forms
 
-def rowToWord(row: List[str]) -> TransWord:
+def row_to_word(row: List[str]) -> TransWord:
     return TransWord(
         word_id = int(row[-1].strip()),
         word = row[0].strip().lower(),
@@ -156,9 +156,9 @@ if __name__ == '__main__':
     with open('hagen-morph.txt', encoding='windows-1251') as file:
         rows = (line.split('|') for line in file)
         articles = mit.split_at(rows, lambda row: len(row) < 4)
-        stripped_articles = map(stripArticle, articles)
+        stripped_articles = map(strip_article, articles)
         stripped_article_rows = (row for article in stripped_articles for row in article)
-        words = map(rowToWord, stripped_article_rows)
+        words = map(row_to_word, stripped_article_rows)
         
         chunks = mit.chunked(words, 100_000)
         for index, chunk in enumerate(chunks):
