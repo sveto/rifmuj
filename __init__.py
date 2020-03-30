@@ -14,15 +14,17 @@ app = Flask(__name__)
 app.url_map.converters["query"] = Query
 
 
-from .sources.phonetizer import phonetize, TransWord, declarative_base, create_engine, pairs, sessionmaker
+from .data.phonetizer import phonetize, TransWord, declarative_base, create_engine, sessionmaker
 
 Base = declarative_base()
-engine = create_engine('sqlite:///sources/abcd.sqlite', echo=True)
+engine = create_engine('sqlite:///data/abcd.sqlite', echo=True)
 
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
 session = Session()
+
+pairs = ('бп', 'дт', 'гк', 'зс', 'жш', 'вф', 'БП', 'ДТ', 'ГК', 'ЗС', 'ЖШ', 'ВФ')
 
 def lookup(
    word : str, 
@@ -46,17 +48,23 @@ def lookup(
 
    phword = phword[accented:]
    print(phword)
-   if xj and not phword.endswith('й'):
-      phword += 'й'
+   if xj:
+      if phword.endswith('Й'):
+         phword += '?'
+      else:
+         phword += 'Й?'
    if zv: # no difference between voiced and unvoiced
       for x in pairs: 
-         phword = phword.replace(x, "[" + x + pairs[x] + "]")
+         phword = rsub("[" + x + "]", "\[" + x + "\]", phword)
    if uu and yy:
-      phword = rsub("[уиа]([^_])", r"\[уиа\]\\1", phword)
+      phword = rsub("[уиа]", r"\[уиа\]", phword)
+      phword = rsub("[УИА]", r"\[УИА\]", phword)
    elif uu:
-      phword = rsub("[уа]([^_])", r"\[уа\]\\1", phword)
+      phword = rsub("[уа]", r"\[уа\]", phword)
+      phword = rsub("[УА]", r"\[УА\]", phword)
    elif yy:
-      phword = rsub("[иа]([^_])", r"\[иа\]\\1", phword)
+      phword = rsub("[иа]", r"\[иа\]", phword)
+      phword = rsub("[ИА]", r"\[ИА\]", phword)
 
    phword = phword + "$"
    
