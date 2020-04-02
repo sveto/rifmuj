@@ -1,20 +1,8 @@
-"""Makes the database from the plaintext dictionary."""
-
 from __future__ import annotations
-from typing import List, Tuple, Iterable, Dict, Set, Optional, Callable, Type, TypeVar, Match
+from typing import List, Dict, Callable, Type, TypeVar, Match
 from enum import Enum, auto
 import re
 import functools as ft
-import itertools as it
-import more_itertools as mit
-import multiprocessing as mp
-from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-
-Base = declarative_base()
-engine = create_engine('sqlite:///abcd.sqlite', echo=False)
 
 
 bounds = ' ,-'
@@ -40,8 +28,8 @@ unvoicing_cons = unpaired_unvoiced_cons + unpaired_unvoiced_cons.upper() + voice
 
 def change(from_: str, to: str) -> Callable[[str], str]:
     """Returns a function that replaces in its string argument
-    every character from the `from_`` string
-    with the corresponding (in order) character from the `to` string.
+    every character from the `from_` string with
+    the corresponding (in order) character from the `to` string.
     """
     changing_dict = {key: value for key, value in zip(from_, to)}
     return lambda s: changing_dict[s]
@@ -88,7 +76,7 @@ class PhonTransform:
     Replaces every match of the search pattern in the input string
     with the result of the substitution function.
     
-    Use classmethods to create transforms of different types.
+    Use classmethods to create transformations of different types.
     """
     def __init__(self, search_pattern: str, sub_func: Callable[[Match], str]) -> None:
         self.searchPattern = re.compile(search_pattern, re.VERBOSE)
@@ -112,8 +100,8 @@ class PhonTransform:
         Replaces each key matching the `search_pattern`
         with the corresponding value from the dictionary.
         
-        For convenience, the dictionary is split into `rules`.
-        Each rule is a small dictionary defining a part of possible situations.
+        For convenience, the dictionary is split into `rules`. Each rule
+        is a small sub-dictionary defining a part of possible situations.
         
         When combining rules into a single dictionary, the latest
         rules in the list have priority over the preceding ones.
@@ -124,7 +112,7 @@ class PhonTransform:
     
     @classmethod
     def rules_with_cases(cls, search_pattern: str, CaseEnum: Type[TCaseEnum], detect_case: Callable[[Match], TCaseEnum], rules: Callable[[TCaseEnum], List[Dict[str, str]]]) -> PhonTransform:
-        """This type of transformations is similar to the previous one,
+        """This type of transformation is similar to the previous one,
         but more flexible.
         
         The `rules` are defined using a lambda whitch can return different 
@@ -219,69 +207,3 @@ def phonetize(accented_spell: str) -> str:
     Examples can be found in `test_phonetize.py`.
     """
     return ft.reduce(lambda w, t: t.apply_to(w), phon_transforms, accented_spell)
-
-
-class Word(Base): # type: ignore
-    __tablename__ = 'words'
-    word_id = Column(Integer, primary_key=True)
-    spell = Column(String)
-    trans = Column(String)
-    gram = Column(String)
-
-    def __init__(self, word_id: int, spell: str, trans: str, gram: str) -> None:
-        self.word_id = word_id
-        self.spell = spell
-        self.trans = trans
-        self.gram = gram
-
-    def __repr__(self) -> str:
-        return f'#{self.word_id} {self.spell}: {self.trans} [{self.gram.strip()}]'
-
-
-usable_form_pattern = re.compile(r'^\s*[^\s*]')  # form does not start with *
-
-def strip_article(article: List[List[str]]) -> Iterable[List[str]]:
-    """Removes unused (marked with *) and identical forms from an article."""
-    usable_forms = (row for row in article if usable_form_pattern.match(row[0]))
-    unique_forms = mit.unique_everseen(usable_forms, lambda row: row[2])
-    return unique_forms
-
-def row_to_word(row: List[str]) -> Word:
-    return Word(
-        word_id = int(row[-1].strip()),
-        spell = row[0].strip().lower(),
-        trans = phonetize(row[2].strip().lower()),
-        gram = row[1]
-    )
-
-
-if __name__ == '__main__':
-    started = datetime.now()
-    print(f'Started: {started}')
-    
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    
-    print('Clearing the db table...')
-    session.query(Word).delete()
-    
-    print('Populating the db table from the dictionary file:')
-    with open('hagen-morph.txt', encoding='windows-1251') as file:
-        rows = (line.split('|') for line in file)
-        articles = mit.split_at(rows, lambda row: len(row) < 4)
-        stripped_articles = map(strip_article, articles)
-        stripped_article_rows = (row for article in stripped_articles for row in article)
-        words = map(row_to_word, stripped_article_rows)
-        
-        chunks = mit.chunked(words, 100_000)
-        for index, chunk in enumerate(chunks):
-            print(f' chunk {index} ({chunk[0].spell} — {chunk[-1].spell})...')
-            session.bulk_save_objects(chunk)
-    
-    print('Committing data into the db...')
-    session.commit()
-    
-    finished = datetime.now()
-    print(f'Finished: {finished}')
-    print(f'Elapsed: {finished - started}')
