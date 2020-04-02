@@ -24,28 +24,27 @@ def test_consonant_voicing():
     assert phonetize("сво'д") == 'свОт'
     assert phonetize("пое'здка") == 'паЙЭстка'
     assert phonetize("ро'стбиф") == 'рОздБиф'
-    assert phonetize("ка'к бы") == 'кАг би'
+    assert phonetize("овца'") == 'афтсА'
+    assert phonetize("плацда'рм") == 'пладздАрм'
+    assert phonetize("ка'к бы") == 'кАгби'
 
 def test_cluster_simplification():
-    assert phonetize("чу'вство") == 'ЧУства'
-    assert phonetize("здра'вствуй") == 'здрАствуЙ'
     assert phonetize("ле'стница") == 'ЛЭсНитса'
     assert phonetize("по'здно") == 'пОзна'
 
-def test_ogo_endings():
+def test_gen_sg_adj_endings():
     assert phonetize("его'") == 'ЙивО'
     assert phonetize("зло'го") == 'злОва'
     assert phonetize("кра'сного") == 'крАснава'
     assert phonetize("си'него") == 'СИНива'
     assert phonetize("боя'вшегося") == 'баЙАфшиваСа'
+    assert phonetize("кого'-нибудь") == 'кавОНибуТ'
 
 def test_reflexive_verbs():
     assert phonetize("куса'лся") == 'кусАлСа'
     assert phonetize("куса'ться") == 'кусАтса'
     assert phonetize("куса'ется") == 'кусАЙитса'
 
-def test_orthographic_pangrams():
+def test_orthographic_pangram():
     assert (phonetize("э`кс-гра'ф, плю'ш изъя'т, бьё'м чу'ждый це'н хво'щ")
-        == 'эгз-грАф, пЛУш ЙизЙАд, БЙОм ЧУждиЙ тсЭн хвОШЧ')
-    assert (phonetize("чу'шь, ги'д вё'з кэ'б ца'пф, ю'ный жмо'т съе'л хря'щ")
-        == 'ЧУж, ГИт ВОс кЭп тсАпф, ЙУниЙ жмОт сЙЭл хРАШЧ')
+        == 'эгзгрАфпЛУшЙизЙАдБЙОмЧУждиЙтсЭнхвОШЧ')
