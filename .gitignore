@@ -4,6 +4,6 @@ __pycache__
 .vscode
 .ipynb_checkpoints
 data/hagen-morph.txt
-data/abcd.sqlite
-data/abcd.sqlite.backup
+data/database.sqlite
+data/database.sqlite.backup
 profile*.dat

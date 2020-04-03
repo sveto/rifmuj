@@ -46,12 +46,12 @@ def query_db(query, args=(), one=False):
 pairs = ('бп', 'дт', 'гк', 'зс', 'жш', 'вф', 'БП', 'ДТ', 'ГК', 'ЗС', 'ЖШ', 'ВФ')
 
 def lookup(
-   word : str, 
-   xj:bool=False,
-   zv:bool=False,
-   uu:bool=False,
-   yy:bool=False, 
-   nu:str="0"
+   word: str, 
+   xj: bool = False,
+   zv: bool = False,
+   uu: bool = False,
+   yy: bool = False, 
+   nu: str = "0"
 ) -> List[str]:
    phword = phonetize(word)
    nu_ = int(nu)
@@ -89,7 +89,7 @@ def lookup(
    print(phword)
 
    result = query_db(f'SELECT spell FROM words WHERE trans GLOB "{phword}"')
-   return sorted([x[0] for x in result], key=lambda x : x[::-1])
+   return sorted([x[0] for x in result], key=lambda x: x[::-1])
    
 
 
@@ -99,11 +99,11 @@ def index():
 
 @app.route("/lookup/<query:word>")
 def results(word):
-   xj = request.args.get("xj") or False
-   zv = request.args.get("zv") or False
-   uu = request.args.get("uu") or False
-   yy = request.args.get("yy") or False
-   nu = request.args.get("nu") or 0
+   xj = request.args.get("xj", default=False)
+   zv = request.args.get("zv", default=False)
+   uu = request.args.get("uu", default=False)
+   yy = request.args.get("yy", default=False)
+   nu = request.args.get("nu", default="0")
    tables = lookup(word, xj, zv, uu, yy, nu)
    return render_template("results.html", tables=tables, inputword=word)
 
