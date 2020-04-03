@@ -9,8 +9,8 @@
    
       <table id="result_table">
          {% for word in tables %}      
-         <tr><td>{{ word }}</td></tr>
-      </table><br>
+            <tr><td>{{ word }}</td></tr>
+         
    {% else %}
    <tr><td>
       <div id="word-not-found">
@@ -19,5 +19,6 @@
       <br>
    </td></tr>
    {% endfor %}
+      </table><br>
 </div>
 {% endblock %}

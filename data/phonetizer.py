@@ -214,4 +214,7 @@ def phonetize(accented_spell: str) -> str:
     """Returns the phonetic transcription of a word by its accented spelling.
     Examples can be found in `test_phonetize.py`.
     """
-    return ft.reduce(lambda w, t: t.apply_to(w), phon_transforms, accented_spell)
+    result = accented_spell
+    for t in phon_transforms:
+        result = t.apply_to(result)
+    return result

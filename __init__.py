@@ -2,7 +2,7 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-
+#from sqlalchemy.orm import sessionmaker
 from typing import List
 from re import search as rsearch, sub as rsub
 
@@ -13,16 +13,35 @@ app = Flask(__name__)
 
 app.url_map.converters["query"] = Query
 
+#from .data.data_model import Word, engine, Base
+from .data.phonetizer import phonetize
 
-from .data.phonetizer import phonetize, TransWord, declarative_base, create_engine, sessionmaker
+#Base.metadata.create_all(engine)
+#Session = sessionmaker(bind=engine)
+#session = Session()
 
-Base = declarative_base()
-engine = create_engine('sqlite:///data/abcd.sqlite', echo=True)
+import sqlite3
+from flask import g
 
-Base.metadata.create_all(engine)
+DATABASE = 'data/database.sqlite'
 
-Session = sessionmaker(bind=engine)
-session = Session()
+def get_db():
+   db = getattr(g, '_database', None)
+   if db is None:
+      db = g._database = sqlite3.connect(DATABASE)
+   return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+   db = getattr(g, '_database', None)
+   if db is not None:
+      db.close()
+
+def query_db(query, args=(), one=False):
+   cur = get_db().execute(query, args)
+   rv = cur.fetchall()
+   cur.close()
+   return (rv[0] if rv else None) if one else rv
 
 pairs = ('бп', 'дт', 'гк', 'зс', 'жш', 'вф', 'БП', 'ДТ', 'ГК', 'ЗС', 'ЖШ', 'ВФ')
 
@@ -36,12 +55,14 @@ def lookup(
 ) -> List[str]:
    phword = phonetize(word)
    nu_ = int(nu)
-   if rsearch("_$", phword):
+   if phword[-1] in "АЭИОУ": # or xj:
       nu_ += 1 # if vodá, the rhyme in Russian is -dá
 
-   accented = phword.find("_")-1
-   assert accented > -1, "bad word"
-
+   accented_match = rsearch("[АЭИОУ]", phword)
+   #print(accented)
+   assert accented_match is not None, "bad word"
+   accented = accented_match.start()
+   
    accented = accented - nu_  # additional pre-rhyme
    if accented < 0:
       accented = 0
@@ -49,30 +70,28 @@ def lookup(
    phword = phword[accented:]
    print(phword)
    if xj:
-      if phword.endswith('Й'):
-         phword += '?'
-      else:
-         phword += 'Й?'
+      while not phword[-1] in "АЭИОУаэиоу":
+         phword = phword[:-1]
+      phword += '?'
+
    if zv: # no difference between voiced and unvoiced
       for x in pairs: 
-         phword = rsub("[" + x + "]", "\[" + x + "\]", phword)
+         phword = rsub("[" + x + "]", "[" + x + "]", phword)
    if uu and yy:
-      phword = rsub("[уиа]", r"\[уиа\]", phword)
-      phword = rsub("[УИА]", r"\[УИА\]", phword)
+      phword = rsub("[уиа]", r"[уиа]", phword)
    elif uu:
-      phword = rsub("[уа]", r"\[уа\]", phword)
-      phword = rsub("[УА]", r"\[УА\]", phword)
+      phword = rsub("[уа]", r"[уа]", phword)
    elif yy:
-      phword = rsub("[иа]", r"\[иа\]", phword)
-      phword = rsub("[ИА]", r"\[ИА\]", phword)
+      phword = rsub("[иа]", r"[иа]", phword)
 
-   phword = phword + "$"
+   phword = "*" + phword 
    
    print(phword)
 
-   return session.query(TransWord).filter(TransWord.trans.op('GLOB')(phword)).all()
+   result = query_db(f'SELECT spell FROM words WHERE trans GLOB "{phword}"')
+   return sorted([x[0] for x in result], key=lambda x : x[::-1])
    
-   
+
 
 @app.route("/")
 def index():
