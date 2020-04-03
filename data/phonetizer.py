@@ -7,9 +7,9 @@ import functools as ft
 
 separators = ' ,-'
 accents = "'`"
-plain_vows   = 'ыэаоу'
-jot_vows     = 'иеяёю'
-vow_phonemes = 'иэаоу'
+plain_vowels   = 'ыэаоу'
+jot_vowels     = 'иеяёю'
+vowel_phonemes = 'иэаоу'
 signs = 'ъь'
 sonorant_cons = 'ймнлр'
 unpaired_unvoiced_cons = 'хцчщ'
@@ -18,9 +18,9 @@ paired_unvoiced_cons = 'фпстшк'
 soft_only_cons = 'йчщ'
 hard_only_cons = 'жшц'
 
-vows = plain_vows + jot_vows
-cons = sonorant_cons + paired_voiced_cons + paired_unvoiced_cons + unpaired_unvoiced_cons
-softable_cons = [c for c in cons if c not in hard_only_cons]
+vowels = plain_vowels + jot_vowels
+consonants = sonorant_cons + paired_voiced_cons + paired_unvoiced_cons + unpaired_unvoiced_cons
+softable_cons = [c for c in consonants if c not in hard_only_cons]
 voiceable_cons = paired_unvoiced_cons + paired_unvoiced_cons.upper()
 unvoiceable_cons = paired_voiced_cons + paired_voiced_cons.upper()
 voicing_cons = paired_voiced_cons[1:] + paired_voiced_cons[1:].upper()  # without ‘в’
@@ -33,40 +33,42 @@ def change(from_: str, to: str) -> Callable[[str], str]:
     changing_dict = {key: value for key, value in zip(from_, to)}
     return lambda s: changing_dict[s]
 
-phonemize = change(   plain_vows + jot_vows     ,
-                to= vow_phonemes + vow_phonemes )
-reduct_less = change(vow_phonemes, to='ииаау')
-reduct_more = change(vow_phonemes, to='ииииу')
+phonemize = change(   plain_vowels + jot_vowels     ,
+                to= vowel_phonemes + vowel_phonemes )
+reduct_less = change(vowel_phonemes, to='ииаау')
+reduct_more = change(vowel_phonemes, to='ииииу')
 voice = change(voiceable_cons, to=unvoiceable_cons)
 unvoice = change(unvoiceable_cons, to=voiceable_cons)
 
-class VowPosition(Enum):
+class VowelPosition(Enum):
     after_hard = auto()
     after_soft = auto()
     isolated   = auto()
+VP = VowelPosition  # a short alias
 
-class VowStress(Enum):
+class VowelStress(Enum):
     stressed         = auto()
     semistressed     = auto()
     unstressed_final = auto()
     unstressed       = auto()
+VS = VowelStress  # a short alias
 
-def detect_stress(match: Match) -> VowStress:
+def detect_stress(match: Match) -> VowelStress:
     accent = match.group('accent')
-    if   accent == "'": return VowStress.stressed
-    elif accent == "`": return VowStress.semistressed
-    elif match.group('word_end') is not None: return VowStress.unstressed_final
-    else: return VowStress.unstressed
+    if   accent == "'": return VS.stressed
+    elif accent == "`": return VS.semistressed
+    elif match.group('word_end') is not None: return VS.unstressed_final
+    else: return VS.unstressed
 
-def phonetize_vow(position: VowPosition, stress: VowStress, vow: str) -> str:
-    ph = phonemize(vow)
-    if   stress == VowStress.stressed: return ph.upper()
-    elif stress == VowStress.semistressed: return ph
-    elif stress == VowStress.unstressed_final:
-        if position == VowPosition.isolated: return ph
+def phonetize_vowel(position: VowelPosition, stress: VowelStress, vowel: str) -> str:
+    ph = phonemize(vowel)
+    if   stress == VS.stressed: return ph.upper()
+    elif stress == VS.semistressed: return ph
+    elif stress == VS.unstressed_final:
+        if position == VP.isolated: return ph
         else: return reduct_less(ph)
     else:
-        if position == VowPosition.after_soft: return reduct_more(ph)
+        if position == VP.after_soft: return reduct_more(ph)
         else: return reduct_less(ph)
 
 
@@ -147,26 +149,26 @@ phon_transforms = [
     
     # softness and stress
     PhonTransform.rules_with_cases(
-        rf'''(?P<key>[{cons}]ьо                         # special case: consonant + ьо
-                    |[{cons}]?[{vows}{signs}]           # optional consonant, then, vowel or sign
-                    |[{soft_only_cons}]                 # soft-only consonant that should be uppercased
+        rf'''(?P<key>[{consonants}]ьо                    # special case: consonant + ьо
+                    |[{consonants}]?[{vowels}{signs}]    # optional consonant, then, vowel or sign
+                    |[{soft_only_cons}]                  # soft-only consonant that should be uppercased
              )(?P<accent>[{accents}]?)(?P<word_end>\b)?  # groups for stress type detection
           ''',
-        VowStress,
+        VowelStress,
         detect_stress,
         lambda stress: [
             # -ьо:
-            {f'{c}ьо': f'{c.upper()}Й{phonetize_vow(VowPosition.after_soft, stress, "о")}' for c in cons},
-            {f'{hc}ьо': f'{hc}Й{phonetize_vow(VowPosition.after_soft, stress, "о")}' for hc in hard_only_cons},
+            {f'{c}ьо': f'{c.upper()}Й{phonetize_vowel(VP.after_soft, stress, "о")}' for c in consonants},
+            {f'{hc}ьо': f'{hc}Й{phonetize_vowel(VP.after_soft, stress, "о")}' for hc in hard_only_cons},
             # vowel:
-            {f'{v}': f'{phonetize_vow(VowPosition.isolated, stress, v)}' for v in plain_vows},
-            {f'{jv}': f'Й{phonetize_vow(VowPosition.after_soft, stress, jv)}' for jv in jot_vows},
+            {f'{v}': f'{phonetize_vowel(VP.isolated, stress, v)}' for v in plain_vowels},
+            {f'{jv}': f'Й{phonetize_vowel(VP.after_soft, stress, jv)}' for jv in jot_vowels},
             # vowel + consonant:
-            {f'{c}{v}': f'{c}{phonetize_vow(VowPosition.after_hard, stress, v)}' for c in cons for v in vows},
-            {f'{sc}{jv}': f'{sc.upper()}{phonetize_vow(VowPosition.after_soft, stress, jv)}' for sc in softable_cons for jv in jot_vows},
-            {f'{soc}{v}': f'{soc.upper()}{phonetize_vow(VowPosition.after_soft, stress, v)}' for soc in soft_only_cons for v in vows},
+            {f'{c}{v}': f'{c}{phonetize_vowel(VP.after_hard, stress, v)}' for c in consonants for v in vowels},
+            {f'{sc}{jv}': f'{sc.upper()}{phonetize_vowel(VP.after_soft, stress, jv)}' for sc in softable_cons for jv in jot_vowels},
+            {f'{soc}{v}': f'{soc.upper()}{phonetize_vowel(VP.after_soft, stress, v)}' for soc in soft_only_cons for v in vowels},
             # consonant:
-            {f'{c}{s}': f'{c}' for c in cons for s in signs},
+            {f'{c}{s}': f'{c}' for c in consonants for s in signs},
             {f'{sc}ь': f'{sc.upper()}' for sc in softable_cons},
             {f'{soc}{s}': f'{soc.upper()}' for soc in soft_only_cons for s in signs},
             {f'{soc}': f'{soc.upper()}' for soc in soft_only_cons},

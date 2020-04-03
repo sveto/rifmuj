@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 Base = declarative_base()
-engine = create_engine('sqlite:///abcd.sqlite', echo=False)
+engine = create_engine('sqlite:///database.sqlite', echo=False)
 
 
 class Word(Base): # type: ignore
