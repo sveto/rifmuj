@@ -25,8 +25,17 @@ def row_to_word(row: List[str]) -> Word:
         gram = row[1]
     )
 
+def get_words_from_hagen_dictionary() -> Iterable[Word]:
+    with open('hagen-morph.txt', encoding='windows-1251') as file:
+        rows = (line.split('|') for line in file)
+        articles = mit.split_at(rows, lambda row: len(row) < 4)
+        stripped_articles = map(strip_article, articles)
+        stripped_article_rows = (row for article in stripped_articles for row in article)
+        words = map(row_to_word, stripped_article_rows)
+        for word in words:
+            yield word
 
-if __name__ == '__main__':
+def generate_db() -> None:
     started = datetime.now()
     print(f'Started: {started}')
     
@@ -38,17 +47,12 @@ if __name__ == '__main__':
     session.query(Word).delete()
     
     print('Populating the db table from the dictionary file:')
-    with open('hagen-morph.txt', encoding='windows-1251') as file:
-        rows = (line.split('|') for line in file)
-        articles = mit.split_at(rows, lambda row: len(row) < 4)
-        stripped_articles = map(strip_article, articles)
-        stripped_article_rows = (row for article in stripped_articles for row in article)
-        words = map(row_to_word, stripped_article_rows)
-        
-        chunks = mit.chunked(words, 100_000)
-        for index, chunk in enumerate(chunks):
-            print(f' chunk {index} ({chunk[0].spell} — {chunk[-1].spell})...')
-            session.bulk_save_objects(chunk)
+    words = get_words_from_hagen_dictionary()
+    
+    chunks = mit.chunked(words, 100_000)
+    for index, chunk in enumerate(chunks):
+        print(f' chunk {index} ({chunk[0].spell} — {chunk[-1].spell})...')
+        session.bulk_save_objects(chunk)
     
     print('Committing data into the db...')
     session.commit()
@@ -56,3 +60,7 @@ if __name__ == '__main__':
     finished = datetime.now()
     print(f'Finished: {finished}')
     print(f'Elapsed: {finished - started}')
+
+
+if __name__ == '__main__':
+    generate_db()

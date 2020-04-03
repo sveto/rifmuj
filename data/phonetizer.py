@@ -5,7 +5,7 @@ import re
 import functools as ft
 
 
-bounds = ' ,-'
+separators = ' ,-'
 accents = "'`"
 plain_vows   = 'ыэаоу'
 jot_vows     = 'иеяёю'
@@ -27,9 +27,8 @@ voicing_cons = paired_voiced_cons[1:] + paired_voiced_cons[1:].upper()  # withou
 unvoicing_cons = unpaired_unvoiced_cons + unpaired_unvoiced_cons.upper() + voiceable_cons
 
 def change(from_: str, to: str) -> Callable[[str], str]:
-    """Returns a function that replaces in its string argument
-    every character from the `from_` string with
-    the corresponding (in order) character from the `to` string.
+    """Returns a string-transforming function which maps every character
+    from `from_` in the input to the corresponding character in `to`.
     """
     changing_dict = {key: value for key, value in zip(from_, to)}
     return lambda s: changing_dict[s]
@@ -69,6 +68,7 @@ def phonetize_vow(position: VowPosition, stress: VowStress, vow: str) -> str:
     else:
         if position == VowPosition.after_soft: return reduct_more(ph)
         else: return reduct_less(ph)
+
 
 TCaseEnum = TypeVar('TCaseEnum', bound=Enum)
 class PhonTransform:
@@ -121,19 +121,24 @@ class PhonTransform:
         When a match of the `search_pattern` occurs, the `detect_case` function
         determines whitch case corresponds to the current match, and the replacement
         string is taken from the corresponding list of rules.
+        
+        The group of the `search_pattern` named `key` is used as the dictionary key,
+        not the whole match. The pattern can also define other groups that can be
+        analyzed in the `detect_case` function.
         """
         cases: List[TCaseEnum] = list(CaseEnum)
         rule_dict = {case: {k: v for rule in rules(case) for k, v in rule.items()} for case in cases}
-        sub_func = lambda match: rule_dict[detect_case(match)][match.group('base')]
+        sub_func = lambda match: rule_dict[detect_case(match)][match.group('key')]
         return cls(search_pattern, sub_func)
 
-# List of transorfations used in the `phonetize` function.
+
+# List of transformations used in the `phonetize` function.
 # The order is significant: the transformations are applied in that order.
 phon_transforms = [
     
     # genitive singular adjective endings
     PhonTransform.rules(
-        rf"[ое]'?го'?(?:ся)?(?=$|[{bounds}])",
+        rf"[ое]'?го'?(?:ся)?(?=$|[{separators}])",
         # different stress positions:
         {f"{v}го{r}":  f"{v}во{r}"  for v in 'ое' for r in ['', 'ся']},
         {f"{v}'го{r}": f"{v}'во{r}" for v in 'ое' for r in ['', 'ся']},
@@ -142,9 +147,9 @@ phon_transforms = [
     
     # softness and stress
     PhonTransform.rules_with_cases(
-        rf'''(?P<base>[{cons}]ьо                         # special case: consonant + ьо
-                     |[{cons}]?[{vows}{signs}]           # optional consonant, then, vowel or sign
-                     |[{soft_only_cons}]                 # soft-only consonant that should be uppercased
+        rf'''(?P<key>[{cons}]ьо                         # special case: consonant + ьо
+                    |[{cons}]?[{vows}{signs}]           # optional consonant, then, vowel or sign
+                    |[{soft_only_cons}]                 # soft-only consonant that should be uppercased
              )(?P<accent>[{accents}]?)(?P<word_end>\b)?  # groups for stress type detection
           ''',
         VowStress,
@@ -186,7 +191,7 @@ phon_transforms = [
     ),
     
     # removing word separators
-    PhonTransform.replacement(rf'[{bounds}]+', ''),
+    PhonTransform.replacement(rf'[{separators}]+', ''),
     
     # assimilation by voiceness
     PhonTransform.rules(
@@ -201,6 +206,7 @@ phon_transforms = [
         {f'{c1}{c2}': f'{unvoice(c1)}{unvoice(c2)}' for c1 in unvoiceable_cons for c2 in unvoiceable_cons},
     )
 ]
+
 
 def phonetize(accented_spell: str) -> str:
     """Returns the phonetic transcription of a word by its accented spelling.
