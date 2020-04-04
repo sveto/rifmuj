@@ -1,5 +1,5 @@
 function queryInput(name: string) {
-   return document.querySelector("input[name=" + name + "]") as HTMLInputElement;
+   return document.querySelector(`input[name=${name}`) as HTMLInputElement;
 }
 
 function getWordInput() {
@@ -7,44 +7,26 @@ function getWordInput() {
 }
 
 function onSubmit (event: Event) {
-   var input = getWordInput().value;
-   const scriptRoot = ""; // TODO
+   const input = getWordInput().value;
    if (input) {
-      const url = scriptRoot + "/lookup/" +
-                encodeURIComponent(input) +
-                "?xj=" + queryInput("xj").checked +
-                "&zv=" + queryInput("zv").checked +
-                "&uu=" + queryInput("uu").checked +
-                "&yy=" + queryInput("yy").checked +
-                "&nu=" + queryInput("nu").value;
+      const scriptRoot = "", // TODO
+            url = `${scriptRoot}/lookup/${encodeURIComponent(input)}` +
+                   "?xj=" + queryInput("xj").checked +
+                   "&zv=" + queryInput("zv").checked +
+                   "&uu=" + queryInput("uu").checked +
+                   "&yy=" + queryInput("yy").checked +
+                   "&nu=" + queryInput("nu").value;
       location.href = url;
    }
    event.preventDefault();
 }
 
-function insertString (s: string) {
-   var input = getWordInput(),
-       backup = { start: input.selectionStart, end: input.selectionEnd };
-   
-   input.value = input.value.substring(0, backup.start) + 
-                  s + input.value.substring(backup.start);
-   input.selectionStart = backup.start + s.length;
-   input.selectionEnd = backup.end + s.length;
-   input.focus();
-}
-
 function setup () {
-   document.getElementById("search").addEventListener("submit", onSubmit);
-   
-   const buttons = document.querySelectorAll("#options [type=button]");
+   document.getElementById("search")!.addEventListener("submit", onSubmit);
 
-   for (let button of Array.from(buttons)) {
-      button.addEventListener("click", () => insertString(this.value)); // TODO: what is `this`?
-   }
-   
-   const width = getComputedStyle(document.getElementById("main")).width;
-   document.getElementById("header").style.width = width;
-   document.getElementById("search").style.width = width;
+   const width = getComputedStyle(document.getElementById("main")!).width;
+   document.getElementById("header")!.style.width = width;
+   document.getElementById("search")!.style.width = width;
 
    const url = new URL(location.href);
    const input = getWordInput();
@@ -59,8 +41,12 @@ function setup () {
       queryInput(name).checked = checked;
    }
 
-   const nu = parseInt(url.searchParams.get("nu")) || 0;
-   console.assert(0 <= nu && nu <= 10);
+   // number of matching sounds before the rhyme
+   let nu = parseInt(url.searchParams.get("nu") || "0") || 0;
+   if (nu < 0)
+      nu = 0;
+   if (nu > 10)
+      nu = 10;
    queryInput("nu").value = nu.toString();
 }
 
