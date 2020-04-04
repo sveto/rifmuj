@@ -53,7 +53,7 @@ def lookup(
    yy: bool = False, 
    nu: str = "0"
 ) -> List[str]:
-   phword = phonetize(word)
+   phword = phonetize(word.replace("_", "'"))
    nu_ = int(nu)
    if phword[-1] in "АЭИОУ": # or xj:
       nu_ += 1 # if vodá, the rhyme in Russian is -dá
@@ -105,17 +105,22 @@ def results(word):
    yy = request.args.get("yy", default=False)
    nu = request.args.get("nu", default="0")
    tables = lookup(word, xj, zv, uu, yy, nu)
-   return render_template("results.html", tables=tables, inputword=word)
+   return render_template("results.html", tables=tables, inputword=word.replace("_", "\u0301"))
 
 @app.errorhandler(404)
 def page_not_found(_):
    return render_template("404.html"), 404
 
-# @app.route("/random")
-# def random():
-#    word = random_word()
-#    kwargs = {word, False, False, False, False, 0}
-#    return redirect(url_for("results", **kwargs))
+@app.route("/random")
+def random():
+   spell, trans = query_db("SELECT spell, trans FROM words ORDER BY RANDOM() LIMIT 1;")[0]
+   trans_vowels = [i for i,x in enumerate(trans) if x in "аэиоуАЭИОУ"]
+   spell_vowels = [i for i,x in enumerate(spell) if x in "аэиоуяеыёюАЭИОУЯЕЫЁЮ"]
+   accented_vowel = [y for y,i in enumerate(trans_vowels) if trans[i] in "АЭИОУ"][0]
+   y = spell_vowels[accented_vowel] + 1
+   spell = spell[:y] + "_" + spell[y:] # accenting the word spelling
+   print(spell)
+   return redirect(url_for("results", word=spell))
 
 @app.route("/about")
 def about():
