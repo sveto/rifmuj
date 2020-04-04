@@ -7,3 +7,4 @@ data/hagen-morph.txt
 data/database.sqlite
 data/database.sqlite.backup
 profile*.dat
+static/index.js

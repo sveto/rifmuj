@@ -1,5 +1,3 @@
-// tsc index.ts --lib dom,es6
-
 function queryInput(name: string) {
    return document.querySelector("input[name=" + name + "]") as HTMLInputElement;
 }
@@ -10,7 +8,7 @@ function getWordInput() {
 
 function onSubmit (event: Event) {
    var input = getWordInput().value;
-   var scriptRoot = ""; // TODO!!!
+   const scriptRoot = ""; // TODO
    if (input) {
       const url = scriptRoot + "/lookup/" +
                 encodeURIComponent(input) +
@@ -41,7 +39,7 @@ function setup () {
    const buttons = document.querySelectorAll("#options [type=button]");
 
    for (let button of Array.from(buttons)) {
-      button.addEventListener("click", () => insertString(this.value));
+      button.addEventListener("click", () => insertString(this.value)); // TODO: what is `this`?
    }
    
    const width = getComputedStyle(document.getElementById("main")).width;
