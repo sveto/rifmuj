@@ -2,7 +2,6 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-#from sqlalchemy.orm import sessionmaker
 from typing import List
 from re import search as rsearch, sub as rsub
 
@@ -10,15 +9,9 @@ class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
 
 app = Flask(__name__)
-
 app.url_map.converters["query"] = Query
 
-#from .data.data_model import Word, engine, Base
 from .data.phonetizer import phonetize
-
-#Base.metadata.create_all(engine)
-#Session = sessionmaker(bind=engine)
-#session = Session()
 
 import sqlite3
 from flask import g
@@ -55,7 +48,7 @@ def lookup(
 ) -> List[str]:
    phword = phonetize(word.replace("_", "'"))
    nu_ = int(nu)
-   if phword[-1] in "АЭИОУ": # or xj:
+   if phword[-1] in "АЭИОУ":
       nu_ += 1 # if vodá, the rhyme in Russian is -dá
 
    accented_match = rsearch("[АЭИОУ]", phword)
@@ -118,8 +111,8 @@ def random():
    spell_vowels = [i for i,x in enumerate(spell) if x in "аэиоуяеыёюАЭИОУЯЕЫЁЮ"]
    accented_vowel = [y for y,i in enumerate(trans_vowels) if trans[i] in "АЭИОУ"][0]
    y = spell_vowels[accented_vowel] + 1
-   spell = spell[:y] + "_" + spell[y:] # accenting the word spelling
-   print(spell)
+   # accenting the word spelling
+   spell = spell[:y] + "_" + spell[y:] 
    return redirect(url_for("results", word=spell))
 
 @app.route("/about")

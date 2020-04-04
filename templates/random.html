@@ -5,15 +5,12 @@
    <br>
    {% for table in tables %}
       <table id="result_table">
-         <caption>
-            {{ table.caption }}
-         </caption>
          {% include table.pos + ".html" %}
       </table>
       <br>
    {% else %}
       <div id="word-not-found">
-         Реч&nbsp;„{{ tables.input }}”&nbsp;није&nbsp;пронађена 😞
+         Слово &nbsp;„{{ inputword }}”&nbsp;не&nbsp;найдено 😞
       </div>
    {% endfor %}
 </div>
