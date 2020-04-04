@@ -18,7 +18,7 @@ from flask import g
 
 DATABASE = 'data/database.sqlite'
 
-def get_db():
+def get_db() -> sqlite3.Connection:
    db = getattr(g, '_database', None)
    if db is None:
       db = g._database = sqlite3.connect(DATABASE)
@@ -26,12 +26,14 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
+   db: Optional[sqlite3.Connection]
    db = getattr(g, '_database', None)
    if db is not None:
       db.close()
 
 def query_db(query, args=(), one=False):
-   cur = get_db().execute(query, args)
+   cur = get_db().cursor()
+   cur.execute(query, args)
    rv = cur.fetchall()
    cur.close()
    return (rv[0] if rv else None) if one else rv
@@ -39,12 +41,12 @@ def query_db(query, args=(), one=False):
 pairs = ('бп', 'дт', 'гк', 'зс', 'жш', 'вф', 'БП', 'ДТ', 'ГК', 'ЗС', 'ЖШ', 'ВФ')
 
 def lookup(
-   word: str, 
-   xj: str = "false",
-   zv: str = "false",
-   uu: str = "false",
-   yy: str = "false",
-   nu: str = "0"
+   word: str,
+   xj: bool = False,
+   zv: bool = False,
+   uu: bool = False,
+   yy: bool = False,
+   nu: int = 0
 ) -> List[Optional[str]]:
 
    phword = phonetize(word.replace("_", "'"))
@@ -63,41 +65,59 @@ def lookup(
 
    phword = phword[accented:]
    print(phword)
-   if xj == "true":
+   if xj:
       while not phword[-1] in "АЭИОУаэиоу":
          phword = phword[:-1]
       phword += '?'
 
-   if zv == "true": # no difference between voiced and unvoiced
+   if zv: # no difference between voiced and unvoiced
       for x in pairs: 
          phword = rsub("[" + x + "]", "[" + x + "]", phword)
-   if uu == "true" and yy == "true":
+   if uu and yy:
       phword = rsub("[уиа]", r"[уиа]", phword)
-   elif uu == "true":
+   elif uu:
       phword = rsub("[уа]", r"[уа]", phword)
-   elif yy == "true":
+   elif yy:
       phword = rsub("[иа]", r"[иа]", phword)
 
    phword = "*" + phword 
    
    print(phword)
 
-   result = query_db(f'SELECT spell FROM words WHERE trans GLOB "{phword}"')
-   return sorted([x[0] for x in result], key=lambda x: x[::-1])
+   result = query_db(f'SELECT spell FROM words WHERE trans GLOB ?', (phword,))
+   return sorted([x[0] for x in result], key=lambda x: (x or "")[::-1])
    
 
+
+def bool_arg(value: str) -> bool:
+   if value == "true":
+      return True
+   elif value in ("", "false"):
+      return False
+   else:
+      raise ValueError
 
 @app.route("/")
 def index():
    return render_template("index.html")
 
-@app.route("/lookup/<query:word>")
-def results(word):
-   xj = request.args.get("xj", default=False)
-   zv = request.args.get("zv", default=False)
-   uu = request.args.get("uu", default=False)
-   yy = request.args.get("yy", default=False)
-   nu = request.args.get("nu", default="0")
+@app.route("/lookup")
+def results():
+   word: str = request.args.get("word", default="").strip()
+   xj = request.args.get("xj", type=bool_arg, default=False)
+   zv = request.args.get("zv", type=bool_arg, default=False)
+   uu = request.args.get("uu", type=bool_arg, default=False)
+   yy = request.args.get("yy", type=bool_arg, default=False)
+   nu = request.args.get("nu", type=int, default=0)
+
+   # TODO: redirect with the right arg values if there are wrong ones?
+
+   if not word:
+      params = {"xj": xj, "zv": zv, "uu": uu, "yy": yy}
+      kwargs = {name: "true" for name, value in params.items()
+                             if value}
+      return redirect(url_for("index", **kwargs, nu=nu))
+
    tables = lookup(word, xj, zv, uu, yy, nu)
    return render_template("results.html", tables=tables, inputword=word.replace("_", "\u0301"))
 
@@ -108,9 +128,9 @@ def page_not_found(_):
 @app.route("/random")
 def random():
    spell, trans = query_db("SELECT spell, trans FROM words ORDER BY RANDOM() LIMIT 1;")[0]
-   trans_vowels = [i for i,x in enumerate(trans) if x in "аэиоуАЭИОУ"]
-   spell_vowels = [i for i,x in enumerate(spell) if x in "аэиоуяеыёюАЭИОУЯЕЫЁЮ"]
-   accented_vowel = [y for y,i in enumerate(trans_vowels) if trans[i] in "АЭИОУ"][0]
+   trans_vowels = [i for i, x in enumerate(trans) if x in "аэиоуАЭИОУ"]
+   spell_vowels = [i for i, x in enumerate(spell) if x in "аэиоуяеыёюАЭИОУЯЕЫЁЮ"]
+   accented_vowel = [y for y, i in enumerate(trans_vowels) if trans[i] in "АЭИОУ"][0]
    y = spell_vowels[accented_vowel] + 1
    # accenting the word spelling
    spell = spell[:y] + "_" + spell[y:] 
