@@ -1,64 +1,57 @@
-function onSubmit (event) {
-   var word = document.getElementById("word").value,
-       xj = document.querySelector("input[name=xj]").checked,
-       zv = document.querySelector("input[name=zv]").checked,
-       uu = document.querySelector("input[name=uu]").checked,
-       yy = document.querySelector("input[name=yy]").checked,
-       nu = document.querySelector("input[name=nu]").value;
-   if (word) {
-      var url = $SCRIPT_ROOT + "/lookup/" +
-                encodeURIComponent(word) +
-                "?xj=" + xj +
-                "&zv=" + zv +
-                "&uu=" + uu +
-                "&yy=" + yy +
-                "&nu=" + nu;
-      location.href = url;
-   }
-   event.preventDefault();
+// tst index.ts --lib dom,es6
+function queryInput(name) {
+    return document.querySelector("input[name=" + name + "]");
 }
-
-function insertString (s) {
-   var input = document.getElementById("word"),
-       backup = { start: input.selectionStart, end: input.selectionEnd };
-   
-   input.value = input.value.substring(0, backup.start) + 
-                  s + input.value.substring(backup.start);
-   input.selectionStart = backup.start + s.length;
-   input.selectionEnd = backup.end + s.length;
-   input.focus();
+function getWordInput() {
+    return document.getElementById("word");
 }
-
-function setup () {
-   document.getElementById("search").addEventListener("submit", onSubmit);
-   
-   for (button of document.querySelectorAll("#options [type=button]")) {
-      button.addEventListener("click", function () {
-         insertString(this.value);
-      });
-   }
-   
-   var width = getComputedStyle(document.getElementById("main")).width;
-   document.getElementById("header").style.width = width;
-   document.getElementById("search").style.width = width;
-
-   var url = new URL(location.href);
-   var input = document.getElementById("word");
-
-   var match = url.pathname.match("/lookup/(.*)");
-   if (match) input.value = decodeURIComponent(match[1]);
-   input.focus();
-
-   var xj = url.searchParams.get("xj") == "true";
-   var zv = url.searchParams.get("zv") == "true";
-   var uu = url.searchParams.get("uu") == "true";
-   var yy = url.searchParams.get("yy") == "true";
-   var nu = url.searchParams.get("nu") || 0;
-   document.querySelector("input[name=xj]").checked = xj;
-   document.querySelector("input[name=zv]").checked = zv;
-   document.querySelector("input[name=uu]").checked = uu;
-   document.querySelector("input[name=yy]").checked = yy;
-   document.querySelector("input[name=nu]").value = nu;
+function onSubmit(event) {
+    var input = getWordInput().value;
+    var scriptRoot = ""; // TODO!!!
+    if (input) {
+        var url = scriptRoot + "/lookup/" +
+            encodeURIComponent(input) +
+            "?xj=" + queryInput("xj").checked +
+            "&zv=" + queryInput("zv").checked +
+            "&uu=" + queryInput("uu").checked +
+            "&yy=" + queryInput("yy").checked +
+            "&nu=" + queryInput("nu").value;
+        location.href = url;
+    }
+    event.preventDefault();
 }
-
+function insertString(s) {
+    var input = getWordInput(), backup = { start: input.selectionStart, end: input.selectionEnd };
+    input.value = input.value.substring(0, backup.start) +
+        s + input.value.substring(backup.start);
+    input.selectionStart = backup.start + s.length;
+    input.selectionEnd = backup.end + s.length;
+    input.focus();
+}
+function setup() {
+    var _this = this;
+    document.getElementById("search").addEventListener("submit", onSubmit);
+    var buttons = document.querySelectorAll("#options [type=button]");
+    for (var _i = 0, _a = Array.from(buttons); _i < _a.length; _i++) {
+        var button = _a[_i];
+        button.addEventListener("click", function () { return insertString(_this.value); });
+    }
+    var width = getComputedStyle(document.getElementById("main")).width;
+    document.getElementById("header").style.width = width;
+    document.getElementById("search").style.width = width;
+    var url = new URL(location.href);
+    var input = getWordInput();
+    var match = url.pathname.match("/lookup/(.*)");
+    if (match)
+        input.value = decodeURIComponent(match[1]);
+    input.focus();
+    for (var _b = 0, _c = ["xj", "zv", "uu", "yy"]; _b < _c.length; _b++) {
+        var name_1 = _c[_b];
+        var checked = url.searchParams.get(name_1) == "true";
+        queryInput(name_1).checked = checked;
+    }
+    var nu = parseInt(url.searchParams.get("nu")) || 0;
+    console.assert(0 <= nu && nu <= 10);
+    queryInput("nu").value = nu.toString();
+}
 document.addEventListener("DOMContentLoaded", setup);

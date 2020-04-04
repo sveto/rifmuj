@@ -1,4 +1,4 @@
-// tst index.ts --lib dom,es6
+// tsc index.ts --lib dom,es6
 
 function queryInput(name: string) {
    return document.querySelector("input[name=" + name + "]") as HTMLInputElement;
