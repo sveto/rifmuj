@@ -40,6 +40,14 @@ def query_db(query, args=(), one=False):
 
 pairs = ('бп', 'дт', 'гк', 'зс', 'жш', 'вф', 'БП', 'ДТ', 'ГК', 'ЗС', 'ЖШ', 'ВФ')
 
+def normalize_accent_marks(word: str) -> str:
+   return (word.replace("_", "'")
+               .replace("\N{COMBINING ACUTE ACCENT}", "'"))
+
+def prettify_accent_marks(word: str) -> str:
+   # absolutely can be called after `normalize_accent_marks`
+   return word.replace("'", "\N{COMBINING ACUTE ACCENT}")
+
 def lookup(
    word: str,
    xj: bool = False,
@@ -49,7 +57,8 @@ def lookup(
    nu: int = 0
 ) -> List[Optional[str]]:
 
-   phword = phonetize(word.replace("_", "'"))
+   phword = phonetize(word)
+
    nu_ = int(nu)
    if phword[-1] in "АЭИОУ":
       nu_ += 1 # if vodá, the rhyme in Russian is -dá
@@ -103,7 +112,7 @@ def index():
 
 @app.route("/lookup")
 def results():
-   word: str = request.args.get("word", default="").strip()
+   word: str = request.args.get("word", default="")
    xj = request.args.get("xj", type=bool_arg, default=False)
    zv = request.args.get("zv", type=bool_arg, default=False)
    uu = request.args.get("uu", type=bool_arg, default=False)
@@ -112,6 +121,8 @@ def results():
 
    # TODO: redirect with the right arg values if there are wrong ones?
 
+   word = normalize_accent_marks(word.strip())
+
    if not word:
       params = {"xj": xj, "zv": zv, "uu": uu, "yy": yy}
       kwargs = {name: "true" for name, value in params.items()
@@ -119,7 +130,7 @@ def results():
       return redirect(url_for("index", **kwargs, nu=nu))
 
    tables = lookup(word, xj, zv, uu, yy, nu)
-   return render_template("results.html", tables=tables, inputword=word.replace("_", "\u0301"))
+   return render_template("results.html", tables=tables, inputword=prettify_accent_marks(word))
 
 @app.errorhandler(404)
 def page_not_found(_):
