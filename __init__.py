@@ -2,7 +2,7 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-from typing import List
+from typing import List, Optional
 from re import search as rsearch, sub as rsub
 
 class Query(PathConverter):
@@ -40,20 +40,21 @@ pairs = ('бп', 'дт', 'гк', 'зс', 'жш', 'вф', 'БП', 'ДТ', 'ГК',
 
 def lookup(
    word: str, 
-   xj: bool = False,
-   zv: bool = False,
-   uu: bool = False,
-   yy: bool = False, 
+   xj: str = "false",
+   zv: str = "false",
+   uu: str = "false",
+   yy: str = "false",
    nu: str = "0"
-) -> List[str]:
+) -> List[Optional[str]]:
+
    phword = phonetize(word.replace("_", "'"))
    nu_ = int(nu)
    if phword[-1] in "АЭИОУ":
       nu_ += 1 # if vodá, the rhyme in Russian is -dá
 
    accented_match = rsearch("[АЭИОУ]", phword)
-   #print(accented)
-   assert accented_match is not None, "bad word"
+   if accented_match is None:
+      return []
    accented = accented_match.start()
    
    accented = accented - nu_  # additional pre-rhyme
@@ -62,19 +63,19 @@ def lookup(
 
    phword = phword[accented:]
    print(phword)
-   if xj:
+   if xj == "true":
       while not phword[-1] in "АЭИОУаэиоу":
          phword = phword[:-1]
       phword += '?'
 
-   if zv: # no difference between voiced and unvoiced
+   if zv == "true": # no difference between voiced and unvoiced
       for x in pairs: 
          phword = rsub("[" + x + "]", "[" + x + "]", phword)
-   if uu and yy:
+   if uu == "true" and yy == "true":
       phword = rsub("[уиа]", r"[уиа]", phword)
-   elif uu:
+   elif uu == "true":
       phword = rsub("[уа]", r"[уа]", phword)
-   elif yy:
+   elif yy == "true":
       phword = rsub("[иа]", r"[иа]", phword)
 
    phword = "*" + phword 
