@@ -1,5 +1,5 @@
 function queryInput(name: string) {
-   return document.querySelector(`input[name=${name}`) as HTMLInputElement;
+   return document.querySelector(`input[name=${name}]`) as HTMLInputElement;
 }
 
 function getWordInput() {
