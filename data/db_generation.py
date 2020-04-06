@@ -6,6 +6,7 @@ import itertools as it
 import more_itertools as mit
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+from functools import reduce
 from phonetizer import phonetize
 from data_model import engine, Base, Word
 
@@ -13,8 +14,15 @@ usable_form_pattern = re.compile(r'^\s*[^\s*]')  # form does not start with *
 
 def strip_article(article: Iterable[List[str]]) -> Iterable[List[str]]:
     """Removes unused (marked with *) and identical forms from an article."""
-    usable_forms = (row for row in article if usable_form_pattern.match(row[0]))
-    unique_forms = mit.unique_everseen(usable_forms, lambda row: row[2])
+    usable_forms = [row for row in article if usable_form_pattern.match(row[0])]
+    unique_forms = list(mit.unique_everseen(usable_forms, lambda row: row[2]))
+    if len(unique_forms) < len(usable_forms):
+        for un in unique_forms:
+            grams = [r[1].strip().split(" ") for r in usable_forms if r[2] == un[2]]
+            newgrams = set()
+            for g in grams:
+                newgrams.update(set(g))
+            un[1] = " " + " ".join(list(newgrams)) + " "
     return unique_forms
 
 def row_to_word(row: List[str]) -> Word:

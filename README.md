@@ -21,7 +21,7 @@ sudo apt install node-typescript
 * Generate JavaScript code from the TypeScript source.
 
 ```bash
-tsc
+./tsc
 ```
 
 * Download the dictionary source file and put it into the `data` folder.
