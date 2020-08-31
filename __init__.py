@@ -1,13 +1,10 @@
 import os
-from sys import path as syspath
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
 from typing import List, Optional
 from re import search as rsearch, sub as rsub
 
-
-syspath.append(os.path.abspath(os.curdir))
 from .data.phonetizer import phonetize
 
 class Query(PathConverter):
