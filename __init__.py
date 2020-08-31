@@ -1,9 +1,14 @@
 import os
+from sys import path as syspath
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
 from typing import List, Optional
 from re import search as rsearch, sub as rsub
+
+
+syspath.append(os.curdir)
+from .data.phonetizer import phonetize
 
 class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
@@ -11,12 +16,11 @@ class Query(PathConverter):
 app = Flask(__name__)
 app.url_map.converters["query"] = Query
 
-from .data.phonetizer import phonetize
 
 import sqlite3
 from flask import g
 
-DATABASE = 'data/database.sqlite'
+DATABASE = os.path.abspath(os.curdir) + '/data/database.sqlite'
 
 def get_db() -> sqlite3.Connection:
    db = getattr(g, '_database', None)
