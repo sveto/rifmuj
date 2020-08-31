@@ -7,7 +7,7 @@ from typing import List, Optional
 from re import search as rsearch, sub as rsub
 
 
-syspath.append(os.curdir)
+syspath.append(os.path.abspath(os.curdir))
 from .data.phonetizer import phonetize
 
 class Query(PathConverter):
