@@ -5,7 +5,7 @@ def test_jot_vowels_and_signs():
     assert phonetize("плю'нь") == 'пЛУН'
     assert phonetize("илья'") == 'ЙиЛЙА'
     assert phonetize("съе'л") == 'сЙЭл'
-    assert phonetize("почтальо'н") == 'паЧтаЛЙОн'
+    assert phonetize("почтальо'н") == 'паТШтаЛЙОн'
 
 def test_vowel_reduction():
     assert phonetize("колесо'") == 'каЛисО'
@@ -17,8 +17,10 @@ def test_vowel_reduction():
 
 def test_complex_consonants():
     assert phonetize("ци'рк") == 'тсИрк'
-    assert phonetize("щи'т") == 'ШЧИт'
-    assert phonetize("счё'т") == 'ШЧОт'
+    assert phonetize("ме'ч") == 'МЭТШ'
+    assert phonetize("щи'т") == 'ШИт'
+    assert phonetize("счё'т") == 'ШОт'
+    assert phonetize("вещдо'к") == 'ВиЖдОк'
 
 def test_consonant_voicing():
     assert phonetize("сво'д") == 'свОт'
@@ -31,6 +33,12 @@ def test_consonant_voicing():
 def test_cluster_simplification():
     assert phonetize("ле'стница") == 'ЛЭсНитса'
     assert phonetize("по'здно") == 'пОзна'
+
+def test_repeating_consonants():
+    assert phonetize("рассо'л") == 'расОл'
+    assert phonetize("мета'лл") == 'МитАл'
+    assert phonetize("металли'ст") == 'МитаЛИст'
+    assert phonetize("отда'ть") == 'адАТ'
 
 def test_gen_sg_adj_endings():
     assert phonetize("его'") == 'ЙивО'
@@ -47,4 +55,4 @@ def test_reflexive_verbs():
 
 def test_orthographic_pangram():
     assert (phonetize("э`кс-гра'ф, плю'ш изъя'т, бьё'м чу'ждый це'н хво'щ")
-        == 'эгзгрАфпЛУшЙизЙАдБЙОмЧУждиЙтсЭнхвОШЧ')
+        == 'эгзгрАфпЛУшЙизЙАдБЙОмТШУждиЙтсЭнхвОШ')

@@ -179,15 +179,17 @@ phon_transforms = [
     
     # consonant clusters
     PhonTransform.rules(
-        r'''[тТ]Са\b          # reflexive verb endings
-           |[цЩ]|[сСшзЗж]Ч    # complex consonants
-           |[сСзЗ][тТдД][нН]  # cluster simplification
+        r'''(?i)           # case insensitive
+            [т]са\b        # reflexive verb endings
+           |[сшзж]ч|[цчщ]  # complex consonants
+           |[сз][тд]н      # cluster simplification
          ''',
         # reflexive verb endings
         {f'{t}Са': 'тса' for t in 'тТ'},
         # complex consonants
         {'ц': 'тс'},
-        {cc: 'ШЧ' for cc in ['Щ', 'сЧ', 'СЧ', 'шЧ', 'зЧ', 'ЗЧ', 'жЧ']},
+        {'Ч': 'ТШ'},
+        {cc: 'Ш' for cc in ['Щ', 'сЧ', 'СЧ', 'шЧ', 'зЧ', 'ЗЧ', 'жЧ']},
         # cluster simplification:
         {f'{s}{t}{n}': f'{s}{n}' for s in 'сСзЗ' for t in 'тТдД' for n in 'нН'}
     ),
@@ -206,7 +208,15 @@ phon_transforms = [
         # unvoicing:
         {f'{c}': f'{unvoice(c)}' for c in unvoiceable_cons},
         {f'{c1}{c2}': f'{unvoice(c1)}{unvoice(c2)}' for c1 in unvoiceable_cons for c2 in unvoiceable_cons},
-    )
+    ),
+    
+    # removing repeating consonants
+    PhonTransform.rules(
+        rf'(?i)([{consonants}])\1', # the same consonant twice, case insensitive
+        {f'{c}{c}': c for c in consonants + consonants.upper()},
+        {f'{c.upper()}{c}': c for c in consonants},
+        {f'{c}{c.upper()}': c.upper() for c in consonants}
+    ),
 ]
 
 
