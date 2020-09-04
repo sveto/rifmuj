@@ -10,7 +10,7 @@ class Word(Base): # type: ignore
     __tablename__ = 'words'
     word_id = Column(Integer, primary_key=True)
     lemma_id = Column(Integer, ForeignKey('words.word_id'))
-    spell = Column(String)
+    spell = Column(String, index=True)
     trans = Column(String)
     rhyme = Column(String, index=True)
     gram = Column(String)
