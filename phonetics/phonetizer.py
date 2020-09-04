@@ -145,7 +145,7 @@ phon_transforms = [
     # consonant clusters
     PhonTransform.rules(
         r'''[тТ]Са\b          # reflexive verb endings
-           |[цЩ]|[сСшзЗж]Ч    # complex consonants
+           |[сСшзЗж]Ч|[цЧЩ]    # complex consonants
            |[сСзЗ][тТдД][нН]  # cluster simplification
          ''',
         # reflexive verb endings

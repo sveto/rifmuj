@@ -1,5 +1,5 @@
 import pytest # type: ignore
-from data.phonetizer import phonetize
+from phonetics.phonetizer import phonetize
 
 def test_jot_vowels_and_signs():
     assert phonetize("плю'нь") == 'пЛУН'

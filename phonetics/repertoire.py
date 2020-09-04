@@ -16,8 +16,8 @@ hard_only_cons = 'жшц'
 # (uppercase vowel phonemes are stressed, uppercase consonant phonemes are palatalized)
 vowel_phonemes = 'иэаоу'
 sonorant_cons = 'ймнлр'
-paired_voiced_cons   = 'бвдзжгh'
-paired_unvoiced_cons = 'пфтсшкх'
+paired_voiced_cons   = 'вбдзжгһ'
+paired_unvoiced_cons = 'фптсшкх'
 consonants = sonorant_cons + paired_voiced_cons + paired_unvoiced_cons + unpaired_unvoiced_cons
 softable_cons = [c for c in consonants if c not in hard_only_cons]
 voiceable_cons = paired_unvoiced_cons + paired_unvoiced_cons.upper()
