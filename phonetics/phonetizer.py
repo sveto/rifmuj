@@ -3,42 +3,7 @@ from typing import List, Dict, Callable, Type, TypeVar, Match
 from enum import Enum, auto
 import re
 import functools as ft
-
-
-separators = ' ,-'
-accents = "'`"
-plain_vowels   = 'ыэаоу'
-jot_vowels     = 'иеяёю'
-vowel_phonemes = 'иэаоу'
-signs = 'ъь'
-sonorant_cons = 'ймнлр'
-unpaired_unvoiced_cons = 'хцчщ'
-paired_voiced_cons   = 'вбзджг'
-paired_unvoiced_cons = 'фпстшк'
-soft_only_cons = 'йчщ'
-hard_only_cons = 'жшц'
-
-vowels = plain_vowels + jot_vowels
-consonants = sonorant_cons + paired_voiced_cons + paired_unvoiced_cons + unpaired_unvoiced_cons
-softable_cons = [c for c in consonants if c not in hard_only_cons]
-voiceable_cons = paired_unvoiced_cons + paired_unvoiced_cons.upper()
-unvoiceable_cons = paired_voiced_cons + paired_voiced_cons.upper()
-voicing_cons = paired_voiced_cons[1:] + paired_voiced_cons[1:].upper()  # without ‘в’
-unvoicing_cons = unpaired_unvoiced_cons + unpaired_unvoiced_cons.upper() + voiceable_cons
-
-def change(from_: str, to: str) -> Callable[[str], str]:
-    """Returns a string-transforming function which maps every character
-    from `from_` in the input to the corresponding character in `to`.
-    """
-    changing_dict = {key: value for key, value in zip(from_, to)}
-    return lambda s: changing_dict[s]
-
-phonemize = change(   plain_vowels + jot_vowels     ,
-                to= vowel_phonemes + vowel_phonemes )
-reduct_less = change(vowel_phonemes, to='ииаау')
-reduct_more = change(vowel_phonemes, to='ииииу')
-voice = change(voiceable_cons, to=unvoiceable_cons)
-unvoice = change(unvoiceable_cons, to=voiceable_cons)
+from .repertoire import *
 
 class VowelPosition(Enum):
     after_hard = auto()
@@ -179,10 +144,9 @@ phon_transforms = [
     
     # consonant clusters
     PhonTransform.rules(
-        r'''(?i)           # case insensitive
-            [т]са\b        # reflexive verb endings
-           |[сшзж]ч|[цчщ]  # complex consonants
-           |[сз][тд]н      # cluster simplification
+        r'''[тТ]Са\b          # reflexive verb endings
+           |[цЩ]|[сСшзЗж]Ч    # complex consonants
+           |[сСзЗ][тТдД][нН]  # cluster simplification
          ''',
         # reflexive verb endings
         {f'{t}Са': 'тса' for t in 'тТ'},
