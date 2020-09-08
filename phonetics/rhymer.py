@@ -24,7 +24,7 @@ class Rhyme:
         return f'{self.pretonic_part}[{self.stressed_vowel}]{post}|{self.final_consonant}'
     
     def get_basic_rhyme(self) -> str:
-        posttonic = ''.join(unvoice(c) + 'v' for c, v in self.posttonic_syllables)
+        posttonic = ''.join(unvoice(c) + 'i' for c, v in self.posttonic_syllables)
         if posttonic:
             return self.stressed_vowel + posttonic
         elif self.final_consonant:
@@ -35,9 +35,9 @@ class Rhyme:
 
 split_into_parts = re.compile(rf'''^
     (?P<pre>.*)
-    (?P<stress>[{stressed_vowel_phonemes}])
+    (?P<stress>[{stressed_vowels}])
     (?P<post>.*?)
-    (?P<final>[{consonant_phonemes}]*)
+    (?P<final>[{consonants}]*)
     $''', re.VERBOSE)
 
-split_into_syllables = re.compile(rf'([{consonant_phonemes}]*)([{vowel_phonemes}])')
+split_into_syllables = re.compile(rf'([{consonants}]*)([{vowels}])')

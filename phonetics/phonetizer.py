@@ -114,48 +114,47 @@ phon_transforms = [
     
     # softness and stress
     PhonTransform.rules_with_cases(
-        rf'''(?P<key>[{consonants}]ьо                    # special case: consonant + ьо
-                    |[{consonants}]?[{vowels}{signs}]    # optional consonant, then, vowel or sign
-                    |[{soft_only_cons}]                  # soft-only consonant that should be uppercased
-             )(?P<accent>[{accents}]?)(?P<word_end>\b)?  # groups for stress type detection
+        rf'''(?P<key>[{consonant_ltrs}]ьо                          # special case: consonant + ьо
+                    |[{consonant_ltrs}]?[{vowel_ltrs}{sign_ltrs}]  # optional consonant, then, vowel or sign
+                    |[{consonant_ltrs}]                            # consonant not followed by a vowel
+             )(?P<accent>[{accents}]?)(?P<word_end>\b)?            # groups for stress type detection
           ''',
         VowelStress,
         detect_stress,
         lambda stress: [
             # -ьо:
-            {f'{c}ьо': f'{c.upper()}Й{phonetize_vowel(VP.after_soft, stress, "о")}' for c in consonants},
-            {f'{hc}ьо': f'{hc}Й{phonetize_vowel(VP.after_soft, stress, "о")}' for hc in hard_only_cons},
+            {f'{c}ьо': f'{phonemize(c).upper()}Y{phonetize_vowel(VP.after_soft, stress, "о")}' for c in consonant_ltrs},
+            {f'{hc}ьо': f'{phonemize(hc)}Y{phonetize_vowel(VP.after_soft, stress, "о")}' for hc in hard_only_cons_ltrs},
             # vowel:
-            {f'{v}': f'{phonetize_vowel(VP.isolated, stress, v)}' for v in plain_vowels},
-            {f'{jv}': f'Й{phonetize_vowel(VP.after_soft, stress, jv)}' for jv in jot_vowels},
+            {f'{v}': f'{phonetize_vowel(VP.isolated, stress, v)}' for v in plain_vowel_ltrs},
+            {f'{jv}': f'Y{phonetize_vowel(VP.after_soft, stress, jv)}' for jv in jot_vowel_ltrs},
             # vowel + consonant:
-            {f'{c}{v}': f'{c}{phonetize_vowel(VP.after_hard, stress, v)}' for c in consonants for v in vowels},
-            {f'{sc}{jv}': f'{sc.upper()}{phonetize_vowel(VP.after_soft, stress, jv)}' for sc in softable_cons for jv in jot_vowels},
-            {f'{soc}{v}': f'{soc.upper()}{phonetize_vowel(VP.after_soft, stress, v)}' for soc in soft_only_cons for v in vowels},
+            {f'{c}{v}': f'{phonemize(c)}{phonetize_vowel(VP.after_hard, stress, v)}' for c in consonant_ltrs for v in vowel_ltrs},
+            {f'{sc}{jv}': f'{phonemize(sc).upper()}{phonetize_vowel(VP.after_soft, stress, jv)}' for sc in softable_cons_ltrs for jv in jot_vowel_ltrs},
+            {f'{soc}{v}': f'{phonemize(soc).upper()}{phonetize_vowel(VP.after_soft, stress, v)}' for soc in soft_only_cons_ltrs for v in vowel_ltrs},
             # consonant:
-            {f'{c}{s}': f'{c}' for c in consonants for s in signs},
-            {f'{sc}ь': f'{sc.upper()}' for sc in softable_cons},
-            {f'{soc}{s}': f'{soc.upper()}' for soc in soft_only_cons for s in signs},
-            {f'{soc}': f'{soc.upper()}' for soc in soft_only_cons},
+            {f'{c}': f'{phonemize(c)}' for c in consonant_ltrs},
+            {f'{c}{s}': f'{phonemize(c)}' for c in consonant_ltrs for s in sign_ltrs},
+            {f'{sc}ь': f'{phonemize(sc).upper()}' for sc in softable_cons_ltrs},
+            {f'{soc}{s}': f'{phonemize(soc).upper()}' for soc in soft_only_cons_ltrs for s in sign_ltrs},
+            {f'{soc}': f'{phonemize(soc).upper()}' for soc in soft_only_cons_ltrs},
             # incorrect formating in the file:
-            {f'{s}': '' for s in signs}
+            {f'{s}': '' for s in sign_ltrs}
         ]
     ),
     
     # consonant clusters
     PhonTransform.rules(
-        r'''[тТ]Са\b          # reflexive verb endings
-           |[сСшзЗж]Ч|[цЧЩ]    # complex consonants
-           |[сСзЗ][тТдД][нН]  # cluster simplification
+        r'''[tT]Sa\b          # reflexive verb endings
+           |[sSzZcj]TC        # cluster simplification
+           |[sSzZ][tTdD][nN]  # cluster simplification
          ''',
         # reflexive verb endings
-        {f'{t}Са': 'тса' for t in 'тТ'},
+        {f'{t}Sa': 'tsa' for t in 'tT'},
         # complex consonants
-        {'ц': 'тс'},
-        {'Ч': 'ТШ'},
-        {cc: 'Ш' for cc in ['Щ', 'сЧ', 'СЧ', 'шЧ', 'зЧ', 'ЗЧ', 'жЧ']},
+        {cc: 'C' for cc in ['sTC', 'STC', 'zTC', 'ZTC', 'cTC', 'jTC']},
         # cluster simplification:
-        {f'{s}{t}{n}': f'{s}{n}' for s in 'сСзЗ' for t in 'тТдД' for n in 'нН'}
+        {f'{s}{t}{n}': f'{s}{n}' for s in 'sSzZ' for t in 'tTdD' for n in 'nN'}
     ),
     
     # removing word separators
@@ -164,7 +163,7 @@ phon_transforms = [
     # assimilation by voiceness
     PhonTransform.rules(
         rf'''[{voiceable_cons}]{{1,2}}(?=[{voicing_cons}])         # unvoiced cluster before a voicing consonant
-            |[{unvoiceable_cons}]{{1,2}}(?=[{unvoicing_cons}]|\b)  # voiced cluster before an unvoicing consonant or word-finally
+            |[{unvoiceable_cons}]{{1,2}}(?=[{voiceable_cons}]|\b)  # voiced cluster before an unvoicing consonant or word-finally
           ''',
         # voicing:
         {f'{c}': f'{voice(c)}' for c in voiceable_cons},
