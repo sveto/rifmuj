@@ -16,13 +16,16 @@ def lookup_rhymes(
     nu: int = 0
 ) -> List[str]:
     session = Session()
-    spell = normalize_accent_marks(query.strip().lower())
-    
-    word = lookup_word(session, spell)
-    if word is None:
-        trans = phonetize(spell)
-        rhyme = Rhyme(trans).get_basic_rhyme()
-        word = Word(0, 0, spell, trans, rhyme, '')
+    try:
+        spell = normalize_accent_marks(query.strip().lower())
+        
+        word = lookup_word(session, spell)
+        if word is None:
+            trans = phonetize(spell)
+            rhyme = Rhyme(trans).get_basic_rhyme()
+            word = Word(0, 0, spell, trans, rhyme, '')
+    finally:
+        session.close()
     
     
     return group_by_lemma(lookup_rhyming_words(session, word, xj, zv, uu, yy, nu))
