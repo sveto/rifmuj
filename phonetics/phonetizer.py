@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import List, Dict, Callable, Type, TypeVar, Match
 from enum import Enum, auto
 import re
-import functools as ft
 from .repertoire import *
 
 class VowelPosition(Enum):

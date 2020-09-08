@@ -1,9 +1,5 @@
-from __future__ import annotations
-from typing import List, Dict, Callable, Type, TypeVar, Match
-from enum import Enum, auto
 import re
-import functools as ft
-from .repertoire import *
+from .repertoire import vowels, stressed_vowels, consonants, unvoice
 
 class Rhyme:
     def __init__(self, transcription: str) -> None:

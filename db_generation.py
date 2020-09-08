@@ -1,6 +1,5 @@
 """Makes the database from the plaintext dictionary."""
 
-from typing import Iterable
 import more_itertools as mit
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime

@@ -1,5 +1,4 @@
-from typing import Iterable, List, Tuple, Optional
-import itertools as it
+from typing import Iterable, List, Tuple
 import more_itertools as mit
 from sqlalchemy.orm import Session, sessionmaker
 from .phonetics.phonetizer import phonetize

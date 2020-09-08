@@ -2,7 +2,6 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-from typing import List, Optional
 from .lookup import lookup_rhymes
 
 class Query(PathConverter):

@@ -1,10 +1,8 @@
-from sqlalchemy import create_engine, Table, Column, String, Integer, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-
 
 Base = declarative_base()
 engine = create_engine('sqlite:///data/database.sqlite', echo=False)
-
 
 class Word(Base): # type: ignore
     __tablename__ = 'words'
