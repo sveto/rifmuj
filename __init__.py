@@ -2,7 +2,8 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-from .lookup import lookup_rhymes
+from .lookup import lookup_word
+from .phonetics.accent import prettify_accent_marks
 
 class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
@@ -11,10 +12,6 @@ app = Flask(__name__)
 app.url_map.converters["query"] = Query
 
 from flask import g
-
-def prettify_accent_marks(word: str) -> str:
-   # absolutely can be called after `normalize_accent_marks`
-   return word.replace("'", "\N{COMBINING ACUTE ACCENT}")
 
 def bool_arg(value: str) -> bool:
    if value == "true":
@@ -44,9 +41,9 @@ def results():
       kwargs = {name: "true" for name, value in params.items()
                              if value}
       return redirect(url_for("index", **kwargs, nu=nu))
-
-   tables = lookup_rhymes(word, xj, zv, uu, yy, nu)
-   return render_template("results.html", tables=tables, inputword=prettify_accent_marks(word))
+   
+   links, tables = lookup_word(word, xj, zv, uu, yy, nu)
+   return render_template("results.html", links=links, tables=tables, inputword=prettify_accent_marks(word))
 
 @app.errorhandler(404)
 def page_not_found(_):

@@ -2,6 +2,11 @@
 {% block tytle %}{{ inputword }} – {% endblock %}
 
 {% block results %}
+<div id="links">
+   {% for link in links %}      
+      <div><a href="/lookup?word={{ link }}">{{ link }}</a></div>
+   {% endfor %}
+</div>
 <div id="tables-or-not-found">
    {% if tables|length > 1 %}
       Найдено <b>{{ tables|length }}</b> результатов:<br><br>
@@ -10,8 +15,9 @@
       <table id="result_table">
          {% for word in tables %}      
             <tr><td>{{ word }}</td></tr>
+         {% endfor %}
          
-   {% else %}
+   {% if links|length == 0 and tables|length == 0 %}
    <tr><td>
       <div id="word-not-found">
          Рифмы&nbsp;на&nbsp;слово&nbsp;„{{ inputword }}“&nbsp;не&nbsp;найдены 😞<br>
@@ -21,7 +27,7 @@
       </div>
       <br>
    </td></tr>
-   {% endfor %}
+   {% endif %}
       </table><br>
 </div>
 {% endblock %}

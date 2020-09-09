@@ -1,4 +1,6 @@
-from typing import Iterable, List, Dict
+from typing import Iterable, List, Dict, Set, Type, TypeVar
+from dataclasses import dataclass
+import re
 import more_itertools as mit
 from data.data_model import Word
 from phonetics.phonetizer import phonetize
@@ -7,24 +9,56 @@ from phonetics.rhymer import Rhyme
 file_name = 'data/hagen-morph.txt'
 file_encoding = 'windows-1251'
 
+T = TypeVar('T', bound='Row')
+@dataclass
 class Row:
-    def __init__(self, line: str) -> None:
+    id: int
+    spell: str
+    accented_spell: str
+    gram: Set[str]
+    
+    @classmethod
+    def from_line(cls: Type[T], line: str) -> T:
         parts = line.split('|')
-        self.spell = parts[0].strip().lower()
-        self.gram  = set(gram_abbr[g] for g in parts[1].split())
-        self.accented_spell = parts[2].strip().lower()
-        self.id = int(parts[-1].strip())
+        return cls(
+            id=int(parts[-1].strip()),
+            spell=cls.normalize_spell(parts[0].strip()),
+            accented_spell=parts[2].strip().lower(),
+            gram=set(gram_abbr[g] for g in parts[1].split() if g in gram_abbr)
+        )
+    
+    @staticmethod
+    def normalize_spell(spell: str) -> str:
+        return (spell.lower()
+            .replace(",", '')
+            .replace("'", '')
+            .replace('ё', 'е')
+        )
 
 class Article:
     def __init__(self, lines: List[str]) -> None:
         # removing lines marked with *
         usable_lines = (l for l in lines if not l.startswith('*'))
         
-        rows = (Row(l) for l in usable_lines)
-        unique_rows = self.combine_identical_forms(rows)
+        rows = (Row.from_line(l) for l in usable_lines)
+        splitted_rows = (r for row in rows for r in self.split_double_accents(row))
+        unique_rows = self.combine_identical_forms(splitted_rows)
         
         self.rows = unique_rows
         self.id = unique_rows[0].id if len(self.rows) > 0 else 0
+    
+    double_accent = re.compile(r"^(.*)'(.*)'(.*)$")
+    
+    @staticmethod
+    def split_double_accents(r: Row) -> Iterable[Row]:
+        match = Article.double_accent.match(r.accented_spell)
+        if match:
+            accented_1 = f"{match[1]}'{match[2]}{match[3]}"
+            accented_2 = f"{match[1]}{match[2]}'{match[3]}"
+            yield Row(r.id, r.spell, accented_1, r.gram)
+            yield Row(-r.id, r.spell, accented_2, r.gram)  # HACK: negative id 
+        else:
+            yield r
     
     @staticmethod
     def combine_identical_forms(rows: Iterable[Row]) -> List[Row]:
@@ -57,73 +91,74 @@ def get_article_words(article: Article) -> Iterable[Word]:
         gram = ''.join(row.gram)
         yield Word(row.id, article.id, row.spell, trans, rhyme, gram)
 
-gram_abbr = {
-    'сущ'   : 'Nn',
-    'прл'   : 'Ad',
-    'гл'    : 'Vb',
-    'нар'   : 'Av',
-    'мест'  : 'Pn',
-    'числ'  : 'Nu',
-    'прч'   : 'Pc',
-    'дееп'  : 'Tg',
-    'межд'  : 'Ij',
-    'предл' : 'Pp',
-    'союз'  : 'Cj',
-    'част'  : 'Pi',
-    'предик': 'Pd',
-    'ввод'  : 'Ph',
-    'нескл' : 'Id',
-    'им'    : 'No',
-    'род'   : 'Ge',
-    'дат'   : 'Da',
-    'вин'   : 'Ac',
-    'тв'    : 'In',
-    'пр'    : 'Lo',
-    'парт'  : 'Pa',
-    'счет'  : 'Cn',
-    'зват'  : 'Vo',
-    'ед'    : 'Sg',
-    'мн'    : 'Pl',
-    'муж'   : 'Ma',
-    'жен'   : 'Fe',
-    'ср'    : 'Ne',
-    'общ'   : 'Co',
-    'неод'  : 'Ia',
-    'одуш'  : 'An',
-    'крат'  : 'Br',
-    'сравн' : 'Cm',
-    'прев'  : 'Sl',
-    'неизм' : 'Al',
-    'инф'   : 'If',
-    'пов'   : 'Ip',
-    '2вид'  : 'Ba',
-    'прош'  : 'Pt',
-    'наст'  : 'Pr',
-    'буд'   : 'Fu',
-    'несов' : 'Im',
-    'сов'   : 'Pf',
-    'безл'  : 'Il',
-    'непер' : 'It',
-    'воз'   : 'Rf',
-    'перех' : 'Tr',
-    'пер/не': 'Ti',
-    'страд' : 'Pv',
-    '1-е'   : '1p',
-    '2-е'   : '2p',
-    '3-е'   : '3p',
-    'неопр' : 'Ie',
-    'кол'   : 'Cr',
-    'поряд' : 'Or',
-    'собир' : 'Cl',
-    'вопр'  : 'Qs',
-    'опред' : 'Df',
-    'обст'  : 'Aj',
-    'кач'   : 'Qu',
-    'спос'  : 'Md',
-    'степ'  : 'Dg',
-    'врем'  : 'Tm',
-    'места' : 'Lc',
-    'напр'  : 'Dr',
-    'причин': 'Cs',
-    'цель'  : 'Oj',
+# Uncomment only what you need
+gram_abbr: Dict[str,str] = {
+    # 'сущ'   : 'Nn',
+    # 'прл'   : 'Ad',
+    # 'гл'    : 'Vb',
+    # 'нар'   : 'Av',
+    # 'мест'  : 'Pn',
+    # 'числ'  : 'Nu',
+    # 'прч'   : 'Pc',
+    # 'дееп'  : 'Tg',
+    # 'межд'  : 'Ij',
+    # 'предл' : 'Pp',
+    # 'союз'  : 'Cj',
+    # 'част'  : 'Pi',
+    # 'предик': 'Pd',
+    # 'ввод'  : 'Ph',
+    # 'нескл' : 'Id',
+    # 'им'    : 'No',
+    # 'род'   : 'Ge',
+    # 'дат'   : 'Da',
+    # 'вин'   : 'Ac',
+    # 'тв'    : 'In',
+    # 'пр'    : 'Lo',
+    # 'парт'  : 'Pa',
+    # 'счет'  : 'Cn',
+    # 'зват'  : 'Vo',
+    # 'ед'    : 'Sg',
+    # 'мн'    : 'Pl',
+    # 'муж'   : 'Ma',
+    # 'жен'   : 'Fe',
+    # 'ср'    : 'Ne',
+    # 'общ'   : 'Co',
+    # 'неод'  : 'Ia',
+    # 'одуш'  : 'An',
+    # 'крат'  : 'Br',
+    # 'сравн' : 'Cm',
+    # 'прев'  : 'Sl',
+    # 'неизм' : 'Al',
+    # 'инф'   : 'If',
+    # 'пов'   : 'Ip',
+    # 'прош'  : 'Pt',
+    # 'наст'  : 'Pr',
+    # 'буд'   : 'Fu',
+    # '1-е'   : '1p',
+    # '2-е'   : '2p',
+    # '3-е'   : '3p',
+    # 'несов' : 'Im',
+    # 'сов'   : 'Pf',
+    # '2вид'  : 'Ba',
+    # 'безл'  : 'Il',
+    # 'непер' : 'It',
+    # 'воз'   : 'Rf',
+    # 'перех' : 'Tr',
+    # 'пер/не': 'Ti',
+    # 'страд' : 'Pv',
+    # 'неопр' : 'Ie',
+    # 'кол'   : 'Cr',
+    # 'поряд' : 'Or',
+    # 'собир' : 'Cl',
+    # 'вопр'  : 'Qs',
+    # 'опред' : 'Df',
+    # 'обст'  : 'Aj',
+    # 'кач'   : 'Qu',
+    # 'спос'  : 'Md',
+    # 'степ'  : 'Dg',
+    # 'врем'  : 'Tm',
+    # 'места' : 'Lc',
+    # 'напр'  : 'Dr',
+    # 'причин': 'Cs',
+    # 'цель'  : 'Oj',
 }
