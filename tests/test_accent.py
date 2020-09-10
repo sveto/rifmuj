@@ -3,28 +3,34 @@ from phonetics.accent import *
 from phonetics.phonetizer import phonetize
 
 @pytest.mark.parametrize('input, output', [
-    ("му'ка", "му'ка"),
-    ("мука_", "мука'"),
-    ("му́ка",  "му'ка"),
+    ("му'ка",   "му'ка"),
+    ("мука_",   "мука'"),
+    ("му́ка",    "му'ка"),
+    ("свёкла",  "свё'кла"),
+    ("свё'кла", "свё'кла"),
+    ("свёкла'", "свё'кла'"),
 ])
-def test_normalize_accent_marks(input: str, output: str) -> None:
-    assert normalize_accent_marks(input) == output
-
-@pytest.mark.parametrize('input, output', [
-    ("горы",  "горы"),
-    ("го'ры", "го́ры"),
-    ("горы'", "горы́"),
-])
-def test_prettify_accent_marks(input: str, output: str) -> None:
-    assert prettify_accent_marks(input) == output
+def test_normalize_accented_spell(input: str, output: str) -> None:
+    assert normalize_accented_spell(input) == output
 
 @pytest.mark.parametrize('input, output', [
     ("творог",   "творог"),
     ("творо'г",  "творог"),
     ("тво'ро'г", "творог"),
+    ("мёд",      "мед"),
+    ("мё'д",     "мед"),
 ])
-def test_remove_accent_marks(input: str, output: str) -> None:
-    assert remove_accent_marks(input) == output
+def test_normalize_spell(input: str, output: str) -> None:
+    assert normalize_spell(input) == output
+
+@pytest.mark.parametrize('input, output', [
+    ("горы",  "горы"),
+    ("го'ры", "го́ры"),
+    ("горы'", "горы́"),
+    ("тё'ща", "тёща"),
+])
+def test_prettify_accent_marks(input: str, output: str) -> None:
+    assert prettify_accent_marks(input) == output
 
 @pytest.mark.parametrize('input, result', [
     ("ло'жить",  True),
@@ -34,23 +40,34 @@ def test_remove_accent_marks(input: str, output: str) -> None:
     ("лож'ить",  False),
     ("ложить'",  False),
     ("'ложить",  False),
+    ("ко'вё'р",  False),
+    ("ковё'р",   True),
 ])
 def test_is_correctly_accented(input: str, result: bool) -> None:
     assert is_correctly_accented(input) == result
 
+@pytest.mark.parametrize('spell, trans, yoficated', [
+    ('все', 'fSE', 'все'),
+    ('все', 'fSO', 'всё'),
+    ('пошел', 'pacOl', 'пошёл'),
+])
+def test_yoficate_by_transcription(spell: str, trans: str, yoficated: str) -> None:
+    assert yoficate_by_transcription(spell, trans) == yoficated
+
 @pytest.mark.parametrize('accented',
-    ["пе'рвый", "второ'й", "а'льфа", "ерунда'", "ао'рист", "рлье'х", "к"]
+    ["пе'рвый", "второ'й", "а'льфа", "ерунда'", "ао'рист", "рлье'х", "к", "селё'дка"]
 )
 def test_get_accent_by_transcription(accented: str) -> None:
-    spell = remove_accent_marks(accented)
+    spell = normalize_spell(accented)
     trans = phonetize(accented)
     assert get_accent_by_transcription(spell, trans) == accented
 
 @pytest.mark.parametrize('spell, variants', [
-    ('к', ["к"]),
+    ('к',      ["к"]),
     ('вспять', ["вспя'ть"]),
     ('отнял',  ["о'тнял", "отня'л"]),
     ('ханука', ["ха'нука", "хану'ка", "ханука'"]),
+    ('берег',  ["бе'рег", "бё'рег", "бере'г", "берё'г"]),
 ])
 def test_get_accent_variants(spell: str, variants: List[str]) -> None:
     assert list(get_accent_variants(spell)) == variants

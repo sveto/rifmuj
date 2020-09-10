@@ -1,36 +1,62 @@
 from typing import Iterable, List, Tuple
 import re
-from .repertoire import vowel_ltrs, sign_ltrs, vowels, stressed_vowels, consonants
+from .repertoire import *
 
-def normalize_accent_marks(word: str) -> str:
-    return accent_replacements.sub("'", word)
+def normalize_accented_spell(word: str) -> str:
+    word = word.lower()
+    word = accent_replacements.sub("'", word)
+    word = yo_with_optional_accent.sub("ё'", word)
+    word = forbidden_char.sub('', word)
+    return word
+
+def normalize_spell(word: str) -> str:
+    word = word.lower()
+    word = accent_replacements.sub('', word)
+    word = yo_with_optional_accent.sub("е", word)
+    word = forbidden_char.sub('', word)
+    return word
 
 def prettify_accent_marks(word: str) -> str:
-    return accent_replacements.sub('\N{COMBINING ACUTE ACCENT}', word)
+    word = yo_with_optional_accent.sub('ё', word)
+    word = accent_replacements.sub('\N{COMBINING ACUTE ACCENT}', word)
+    return word
 
-def remove_accent_marks(word: str) -> str:
-    # accent marks in `word` should already be normalized
-    return word.replace("'", '')
-
-def is_correctly_accented(word: str) -> bool:
-    # accent marks in `word` should already be normalized
-    return bool(correctly_accented.match(word))
-
-def get_accent_by_transcription(spell: str, trans: str) -> str:
-    syllables = zip(spell_syllable.finditer(spell), trans_syllable.finditer(trans))
-    return ''.join(s[0] + "'" if t['stressed'] else s[0] for s, t in syllables)
+def is_correctly_accented(accented_spell: str) -> bool:
+    return bool(correctly_accented.match(accented_spell))
 
 def get_accent_variants(spell: str) -> Iterable[str]:
     syllables = list(spell_syllable.finditer(spell))
     if syllables[0]['vowel']:
-        for i, _ in enumerate(s for s in syllables if s['vowel']):
-            yield ''.join(s[0] + "'" if i == j else s[0] for j, s in enumerate(syllables))
+        for i, syllable in enumerate(s for s in syllables if s['vowel']):
+            if syllable['vowel'] == 'е':
+                yield ''.join(s[0] + "'" if i == j else s[0] for j, s in enumerate(syllables))
+                yield ''.join(s['cons'] + "ё'" if i == j else s[0] for j, s in enumerate(syllables))
+            else:
+                yield ''.join(s[0] + "'" if i == j else s[0] for j, s in enumerate(syllables))
     else:
         yield spell
 
+def yoficate_by_transcription(spell: str, trans: str) -> str:
+    accented = get_accent_by_transcription(spell, trans)
+    return accented.replace("'", '')
+
+def get_accent_by_transcription(spell: str, trans: str) -> str:
+    syllables = zip(spell_syllable.finditer(spell), trans_syllable.finditer(trans))
+    return ''.join(get_syllable_accent_by_transcription(s, t) for s, t in syllables)
+
+def get_syllable_accent_by_transcription(spell: re.Match, trans: re.Match) -> str:
+    if spell['vowel'] == 'е' and trans['stressed'] == 'O':
+        return spell['cons'] + "ё'"
+    elif trans['stressed']:
+        return spell[0] + "'"
+    else:
+        return spell[0]
+
+forbidden_char = re.compile(rf'[^{separators}{accents}{sign_ltrs}{vowel_ltrs}{softable_cons_ltrs}]')
 accent_replacements = re.compile(r"['_\N{COMBINING ACUTE ACCENT}]")
+yo_with_optional_accent = re.compile(r"ё'?")
 correctly_accented = re.compile(rf"^[^']*[{vowel_ltrs}]'[^']*$")
 
 # These regexes find C*V syllables and a C+ cluster at the end if present
-spell_syllable = re.compile(rf'[^{vowel_ltrs}]*(?P<vowel>[{vowel_ltrs}])|[^{vowel_ltrs}]+')
+spell_syllable = re.compile(rf'(?P<cons>[^{vowel_ltrs}]*)(?P<vowel>[{vowel_ltrs}])|[^{vowel_ltrs}]+')
 trans_syllable = re.compile(rf'[{consonants}]*(?:(?P<stressed>[{stressed_vowels}])|[{vowels}])|[{consonants}]+')

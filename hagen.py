@@ -5,6 +5,7 @@ import more_itertools as mit
 from data.data_model import Word
 from phonetics.phonetizer import phonetize
 from phonetics.rhymer import Rhyme
+from phonetics.accent import normalize_accented_spell, normalize_spell
 
 file_name = 'data/hagen-morph.txt'
 file_encoding = 'windows-1251'
@@ -22,17 +23,9 @@ class Row:
         parts = line.split('|')
         return cls(
             id=int(parts[-1].strip()),
-            spell=cls.normalize_spell(parts[0].strip()),
-            accented_spell=parts[2].strip().lower(),
+            spell=normalize_spell(parts[0].strip()),
+            accented_spell=normalize_accented_spell(parts[2].strip()),
             gram=set(gram_abbr[g] for g in parts[1].split() if g in gram_abbr)
-        )
-    
-    @staticmethod
-    def normalize_spell(spell: str) -> str:
-        return (spell.lower()
-            .replace(",", '')
-            .replace("'", '')
-            .replace('ё', 'е')
         )
 
 class Article:
@@ -73,11 +66,11 @@ class Article:
         return list(groups.values())
 
 
-def get_hagen_words() -> Iterable[Word]:
-    for article in get_hagen_articles():
+def get_words() -> Iterable[Word]:
+    for article in get_articles():
         yield from get_article_words(article)
 
-def get_hagen_articles() -> Iterable[Article]:
+def get_articles() -> Iterable[Article]:
     with open(file_name, encoding=file_encoding) as file:
         lines = (line.strip() for line in file)
         line_groups = mit.split_at(lines, lambda line: line == '')
@@ -92,7 +85,7 @@ def get_article_words(article: Article) -> Iterable[Word]:
         yield Word(row.id, article.id, row.spell, trans, rhyme, gram)
 
 # Uncomment only what you need
-gram_abbr: Dict[str,str] = {
+gram_abbr: Dict[str, str] = {
     # 'сущ'   : 'Nn',
     # 'прл'   : 'Ad',
     # 'гл'    : 'Vb',

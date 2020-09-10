@@ -3,7 +3,6 @@ from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
 from .lookup import lookup_word
-from .phonetics.accent import prettify_accent_marks
 
 class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
@@ -42,8 +41,8 @@ def results():
                              if value}
       return redirect(url_for("index", **kwargs, nu=nu))
    
-   links, tables = lookup_word(word, xj, zv, uu, yy, nu)
-   return render_template("results.html", links=links, tables=tables, inputword=prettify_accent_marks(word))
+   prettified, links, tables = lookup_word(word, xj, zv, uu, yy, nu)
+   return render_template("results.html", links=links, tables=tables, inputword=prettified)
 
 @app.errorhandler(404)
 def page_not_found(_):

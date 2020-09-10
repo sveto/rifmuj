@@ -22,7 +22,6 @@ from phonetics.phonetizer import phonetize
     ("ме'ч",        'METC'),
     ("щи'т",        'CIt'),
     ("счё'т",       'COt'),
-    ("вещдо'к",     'ViJdOk'),
     
     # consonant voicing
     ("сво'д",       'svOt'),
@@ -31,6 +30,8 @@ from phonetics.phonetizer import phonetize
     ("овца'",       'aftsA'),
     ("плацда'рм",   'pladzdArm'),
     ("ка'к бы",     'kAgbi'),
+    ("со'х бы",     'sOhbi'),
+    ("вещдо'к",     'ViJdOk'),
     
     # cluster simplification
     ("ле'стница",   'LEsNitsa'),
@@ -56,7 +57,7 @@ from phonetics.phonetizer import phonetize
     ("куса'ется",   'kusAYitsa'),
     
     # orthographic pangram
-    ("э`кс-гра'ф, плю'ш изъя'т, бьё'м чу'ждый це'н хво'щ",
+    ("э`кс-гра'ф плю'ш изъя'т бьё'м чу'ждый це'н хво'щ",
         'egzgrAfpLUcYizYAdBYOmTCUjdiYtsEnxvOC'),
 ])
 def test_phonetize(accented_spell: str, transcription: str) -> None:

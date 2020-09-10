@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 from data.data_model import engine, Base, Word
-from hagen import get_hagen_words
+import hagen
 
 def generate_db() -> None:
     started = datetime.now()
@@ -20,7 +20,7 @@ def generate_db() -> None:
         session.query(Word).delete()
         
         print('Populating the db table from the dictionary file:')
-        words = get_hagen_words()
+        words = hagen.get_words()
         
         chunks = mit.chunked(words, 100_000)
         for index, chunk in enumerate(chunks):
@@ -31,6 +31,10 @@ def generate_db() -> None:
         session.commit()
     finally:
         session.close()
+    
+    print('Vacuuming the db...')
+    with engine.connect() as connection:
+        connection.execute("VACUUM")
     
     finished = datetime.now()
     print(f'Finished: {finished}')

@@ -1,6 +1,8 @@
 from typing import Dict, Callable
+import re
 
-separators = ' ,-'
+# Special characters
+separators = ' -'
 accents = "'`"
 
 # Letters
