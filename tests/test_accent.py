@@ -3,12 +3,13 @@ from phonetics.accent import *
 from phonetics.phonetizer import phonetize
 
 @pytest.mark.parametrize('input, output', [
-    ("му'ка",   "му'ка"),
-    ("мука_",   "мука'"),
-    ("му́ка",    "му'ка"),
-    ("свёкла",  "свё'кла"),
-    ("свё'кла", "свё'кла"),
-    ("свёкла'", "свё'кла'"),
+    ("му'ка",       "му'ка"),
+    ("мука_",       "мука'"),
+    ("му́ка",        "му'ка"),
+    ("свёкла",      "свё'кла"),
+    ("свё'кла",     "свё'кла"),
+    ("свёкла'",     "свё'кла'"),
+    (" с!вё`к,ла.", "свё'кла"),
 ])
 def test_normalize_accented_spell(input: str, output: str) -> None:
     assert normalize_accented_spell(input) == output
@@ -19,15 +20,17 @@ def test_normalize_accented_spell(input: str, output: str) -> None:
     ("тво'ро'г", "творог"),
     ("мёд",      "мед"),
     ("мё'д",     "мед"),
+    ("м2ё,д ",   "мед"),
 ])
 def test_normalize_spell(input: str, output: str) -> None:
     assert normalize_spell(input) == output
 
 @pytest.mark.parametrize('input, output', [
-    ("горы",  "горы"),
-    ("го'ры", "го́ры"),
-    ("горы'", "горы́"),
-    ("тё'ща", "тёща"),
+    ("взгля'д", "взгляд"),
+    ("горы",    "горы"),
+    ("го'ры",   "го́ры"),
+    ("горы'",   "горы́"),
+    ("тё'ща",   "тёща"),
 ])
 def test_prettify_accent_marks(input: str, output: str) -> None:
     assert prettify_accent_marks(input) == output

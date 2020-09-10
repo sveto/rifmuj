@@ -26,7 +26,6 @@ def lookup_word(
     session = Session()
     try:
         normalized = normalize_accented_spell(query)
-        prettified = prettify_accent_marks(normalized)
         is_accented = is_correctly_accented(normalized)
         spell = normalize_spell(normalized)
         
@@ -45,15 +44,23 @@ def lookup_word(
         
         # more than one variant of accenting exist
         if len(words_by_accent) > 1:
-            return (prettified, [prettify_accent_marks(accented) for accented, _ in words_by_accent], [])
+            return (
+                prettify_accent_marks(normalized),
+                [prettify_accent_marks(accented) for accented, _ in words_by_accent],
+                []
+            )
         # only one variant of accenting exists
         else:
-            _, word_list = words_by_accent[0]
+            accented, word_list = words_by_accent[0]
             print(f'len(word_list) = {len(word_list)}')
             # for now, just using the first word. TODO: use all words
             word = word_list[0]
             rhyming_words = get_rhyming_words(session, word, xj, zv, uu, yy, nu)
-            return (prettified, [], group_by_lemma(rhyming_words))
+            return (
+                prettify_accent_marks(accented),
+                [],
+                group_by_lemma(rhyming_words)
+            )
     finally:
         session.close()
 
