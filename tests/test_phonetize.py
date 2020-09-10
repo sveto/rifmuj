@@ -2,14 +2,14 @@ import pytest
 from phonetics.phonetizer import phonetize
 
 @pytest.mark.parametrize('accented_spell, transcription', [
-    # jot_vowels_and_signs
+    # jot vowels and signs
     ("плю'нь",      'pLUN'),
     ("илья'",       'YiLYA'),
     ("съе'л",       'sYEl'),
     ("почтальо'н",  'paTCtaLYOn'),
     ("ло'жь",       'lOc'),
     
-    # vowel_reduction
+    # vowel reduction
     ("колесо'",     'kaLisO'),
     ("лягу'шка",    'LigUcka'),
     ("до'ля",       'dOLa'),
@@ -17,14 +17,14 @@ from phonetics.phonetizer import phonetize
     ("ра'дио",      'rADio'),
     ("бегемо`топодо'бный", 'BiGimotapadObniY'),
     
-    # complex_consonants
+    # complex consonants
     ("ци'рк",       'tsIrk'),
     ("ме'ч",        'METC'),
     ("щи'т",        'CIt'),
     ("счё'т",       'COt'),
     ("вещдо'к",     'ViJdOk'),
     
-    # consonant_voicing
+    # consonant voicing
     ("сво'д",       'svOt'),
     ("пое'здка",    'paYEstka'),
     ("ро'стбиф",    'rOzdBif'),
@@ -32,17 +32,17 @@ from phonetics.phonetizer import phonetize
     ("плацда'рм",   'pladzdArm'),
     ("ка'к бы",     'kAgbi'),
     
-    # cluster_simplification
+    # cluster simplification
     ("ле'стница",   'LEsNitsa'),
     ("по'здно",     'pOzna'),
     
-    # repeating_consonants
+    # repeating consonants
     ("рассо'л",     'rasOl'),
     ("мета'лл",     'MitAl'),
     ("металли'ст",  'MitaLIst'),
     ("отда'ть",     'adAT'),
     
-    # gen_sg_adj_endings
+    # gen sg adj endings
     ("его'",        'YivO'),
     ("зло'го",      'zlOva'),
     ("кра'сного",   'krAsnava'),
@@ -50,12 +50,12 @@ from phonetics.phonetizer import phonetize
     ("боя'вшегося", 'baYAfcivaSa'),
     ("кого'-нибудь",'kavONibuT'),
     
-    # reflexive_verbs
+    # reflexive verbs
     ("куса'лся",    'kusAlSa'),
     ("куса'ться",   'kusAtsa'),
     ("куса'ется",   'kusAYitsa'),
     
-    # orthographic_pangram
+    # orthographic pangram
     ("э`кс-гра'ф, плю'ш изъя'т, бьё'м чу'ждый це'н хво'щ",
         'egzgrAfpLUcYizYAdBYOmTCUjdiYtsEnxvOC'),
 ])
