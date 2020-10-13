@@ -80,9 +80,11 @@ def get_articles() -> Iterable[Article]:
 def get_article_words(article: Article) -> Iterable[Word]:
     for row in article.rows:
         trans = phonetize(row.accented_spell)
-        rhyme = Rhyme(trans).get_basic_rhyme()
-        gram = ''.join(row.gram)
-        yield Word(row.id, article.id, row.spell, trans, rhyme, gram)
+        rhyme = Rhyme.from_transcription(trans)
+        if rhyme is not None:
+            basic_rhyme = rhyme.get_basic_rhyme()
+            gram = ''.join(row.gram)
+            yield Word(row.id, article.id, row.spell, trans, basic_rhyme, gram)
 
 # Uncomment only what you need
 gram_abbr: Dict[str, str] = {

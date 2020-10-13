@@ -1,28 +1,43 @@
 from typing import Iterable, List, Dict, Tuple, Callable, TypeVar
+from dataclasses import dataclass
+from abc import ABC
 import itertools as it
 import more_itertools as mit
 from sqlalchemy.orm import Session, sessionmaker
 from .phonetics.phonetizer import phonetize
-from .phonetics.rhymer import Rhyme
+from .phonetics.rhymer import Rhyme, normalized_rhyme_distance
 from .phonetics.accent import *
 from .data.data_model import engine, Word
 
+@dataclass
+class RhymeResult:
+    rhyme: str
+    distance: float
+
+@dataclass
+class LookupResult(ABC):
+    prettified_input_word: str
+
+@dataclass
+class LookupResultAccentVariants(LookupResult):
+    accent_variants: List[str]
+
+@dataclass
+class LookupResultRhymes(LookupResult):
+    rhymes: List[List[RhymeResult]]
+
+LookupResult.register(LookupResultAccentVariants)
+LookupResult.register(LookupResultRhymes)
+
+
 Session = sessionmaker(bind=engine)
 
-def lookup_word(
-    query: str,
-    xj: bool = False,
-    zv: bool = False,
-    uu: bool = False,
-    yy: bool = False,
-    nu: int = 0
-) -> Tuple[str, List[str], List[str]]:
-    """Returns the prettified version of the input word,
+def lookup_word(query: str) -> LookupResult:
+    """Returns an object containing
+    the prettified version of the input word,
     a list of possible accented forms and a list of rhymes.
-    At least one of those lists is always empty.
+    At least one of those lists is empty.
     """
-    # TODO: consider a more sane return type
-    
     session = Session()
     try:
         normalized = normalize_accented_spell(query)
@@ -44,10 +59,9 @@ def lookup_word(
         
         # more than one variant of accenting exist
         if len(words_by_accent) > 1:
-            return (
-                prettify_accent_marks(normalized),
-                [prettify_accent_marks(accented) for accented, _ in words_by_accent],
-                []
+            return LookupResultAccentVariants(
+                prettify_accent_marks(spell),
+                [prettify_accent_marks(accented) for accented, _ in words_by_accent]
             )
         # only one variant of accenting exists
         else:
@@ -55,54 +69,50 @@ def lookup_word(
             print(f'len(word_list) = {len(word_list)}')
             # for now, just using the first word. TODO: use all words
             word = word_list[0]
-            rhyming_words = get_rhyming_words(session, word, xj, zv, uu, yy, nu)
-            return (
+            rhyming_words_with_dists = get_rhyming_words_with_dists(session, word)
+            return LookupResultRhymes(
                 prettify_accent_marks(accented),
-                [],
-                group_by_lemma(rhyming_words)
+                group_by_lemma(rhyming_words_with_dists)
             )
     finally:
         session.close()
 
 def create_word(spell: str, accented: str) -> Word:
     trans = phonetize(accented)
-    rhyme = Rhyme(trans).get_basic_rhyme()
-    return Word(0, 0, spell, trans, rhyme, '')
+    rhyme = Rhyme.from_transcription(trans)
+    basic_rhyme = rhyme.get_basic_rhyme() if rhyme is not None else ''
+    return Word(0, 0, spell, trans, basic_rhyme, '')
 
 def get_words_by_spell(session: Session, spell: str) -> Iterable[Word]:
-        yield from session.query(Word).filter_by(spell=spell)
+    yield from session.query(Word).filter_by(spell=spell)
 
-def get_rhyming_words(
-    session: Session, 
-    word: Word,
-    xj: bool = False,
-    zv: bool = False,
-    uu: bool = False,
-    yy: bool = False,
-    nu: int = 0
-) -> Iterable[Word]:
-    words = (session.query(Word)
+def get_rhyming_words_with_dists(session: Session, word: Word) -> Iterable[Tuple[Word, float]]:
+    rhyming_words = (session.query(Word)
         .filter(Word.rhyme == word.rhyme)
         .filter(Word.lemma_id != word.lemma_id)
         .order_by(Word.lemma_id)
     )
-    # TODO: filter using xj, zv, uu, yy, and nu
-    return words
+    return ((rhyming_word, get_word_distance(word, rhyming_word)) for rhyming_word in rhyming_words)
 
-def group_by_lemma(words: Iterable[Word]) -> List[str]:
-    lemmas = it.groupby(words, lambda w: w.lemma_id)
-    result = (group_word_forms([yoficate_by_transcription(form.spell, form.trans) for form in forms])
-        for lemma, forms in lemmas)
-    return list(sorted(result))
+def get_word_distance(w1: Word, w2: Word) -> float:
+    return normalized_rhyme_distance(w1.trans, w2.trans)
 
-def group_word_forms(forms: List[str]) -> str:
-    if len(forms) > 1:
-        common_prefix_len = min(len(form) for form in forms)
-        while not mit.all_equal(form[:common_prefix_len] for form in forms):
-            common_prefix_len -=1
-        return forms[0] + ', ' + ', '.join(f'-{form[common_prefix_len:]}' for form in forms[1:])
-    else:
-        return forms[0]
+def group_by_lemma(words_with_dists: Iterable[Tuple[Word, float]]) -> List[List[RhymeResult]]:
+    lemmas = it.groupby(words_with_dists, lambda wd: wd[0].lemma_id)
+    result = (group_word_forms([(yoficate_by_transcription(form.spell, form.trans), dist) for form, dist in forms_with_dists])
+        for lemma, forms_with_dists in lemmas)
+    return list(sorted(result, key=lambda lemma: lemma[0].distance))
+
+def group_word_forms(forms_with_dists: List[Tuple[str, float]]) -> List[RhymeResult]:
+    common_prefix_len = min(len(form) for form, _ in forms_with_dists)
+    while not mit.all_equal(form[:common_prefix_len] for form, _ in forms_with_dists):
+        common_prefix_len -=1
+    
+    forms_with_dists.sort(key=lambda fd: fd[1])
+    base_form = forms_with_dists[0]
+    flex_forms = ((f'-{form[common_prefix_len:]}', dist) for form, dist in forms_with_dists[1:])
+    
+    return [RhymeResult(form, dist) for form, dist in it.chain([base_form], flex_forms)]
 
 def get_accent(word: Word) -> str:
     return get_accent_by_transcription(word.spell, word.trans)

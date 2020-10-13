@@ -70,6 +70,7 @@ def test_get_accent_by_transcription(accented: str) -> None:
     ('вспять', ["вспя'ть"]),
     ('отнял',  ["о'тнял", "отня'л"]),
     ('ханука', ["ха'нука", "хану'ка", "ханука'"]),
+    ('мел',    ["ме'л", "мё'л"]),
     ('берег',  ["бе'рег", "бё'рег", "бере'г", "берё'г"]),
 ])
 def test_get_accent_variants(spell: str, variants: List[str]) -> None:

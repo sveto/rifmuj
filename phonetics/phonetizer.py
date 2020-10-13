@@ -18,10 +18,10 @@ class VowelStress(Enum):
 VS = VowelStress  # a short alias
 
 def detect_stress(match: Match) -> VowelStress:
-    accent = match.group('accent')
+    accent = match['accent']
     if   accent == "'": return VS.stressed
     elif accent == "`": return VS.semistressed
-    elif match.group('word_end') is not None: return VS.unstressed_final
+    elif match['word_end'] is not None: return VS.unstressed_final
     else: return VS.unstressed
 
 def phonetize_vowel(position: VowelPosition, stress: VowelStress, vowel: str) -> str:
@@ -94,7 +94,7 @@ class PhonTransform:
         """
         cases: List[TCaseEnum] = list(CaseEnum)
         rule_dict = {case: {k: v for rule in rules(case) for k, v in rule.items()} for case in cases}
-        sub_func = lambda match: rule_dict[detect_case(match)][match.group('key')]
+        sub_func = lambda match: rule_dict[detect_case(match)][match['key']]
         return cls(search_pattern, sub_func)
 
 

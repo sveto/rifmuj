@@ -2,7 +2,7 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-from .lookup import lookup_word
+from .lookup import lookup_word, LookupResultAccentVariants, LookupResultRhymes
 
 class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
@@ -27,22 +27,18 @@ def index():
 @app.route("/lookup")
 def results():
    word: str = request.args.get("word", default="")
-   xj = request.args.get("xj", type=bool_arg, default=False)
-   zv = request.args.get("zv", type=bool_arg, default=False)
-   uu = request.args.get("uu", type=bool_arg, default=False)
-   yy = request.args.get("yy", type=bool_arg, default=False)
-   nu = request.args.get("nu", type=int, default=0)
-
-   # TODO: redirect with the right arg values if there are wrong ones?
 
    if not word:
-      params = {"xj": xj, "zv": zv, "uu": uu, "yy": yy}
-      kwargs = {name: "true" for name, value in params.items()
-                             if value}
-      return redirect(url_for("index", **kwargs, nu=nu))
+      return redirect(url_for("index"))
    
-   prettified, links, tables = lookup_word(word, xj, zv, uu, yy, nu)
-   return render_template("results.html", links=links, tables=tables, inputword=prettified)
+   result = lookup_word(word)
+   
+   # TODO: make separate templates
+   
+   links = result.accent_variants if isinstance(result, LookupResultAccentVariants) else []
+   tables = [', '.join(f'{r.rhyme} ({r.distance:.2f})' for r in lemma) for lemma in result.rhymes] if isinstance(result, LookupResultRhymes) else []
+   
+   return render_template("results.html", links=links, tables=tables, inputword=result.prettified_input_word)
 
 @app.errorhandler(404)
 def page_not_found(_):
