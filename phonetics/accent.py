@@ -60,4 +60,4 @@ correctly_accented = re.compile(rf"^[^']*[{vowel_ltrs}]'[^']*$")
 
 # These regexes find C*V syllables and a C+ cluster at the end if present
 spell_syllable = re.compile(rf'(?P<cons>[^{vowel_ltrs}]*)(?P<vowel>[{vowel_ltrs}])|[^{vowel_ltrs}]+')
-trans_syllable = re.compile(rf'[{consonants}]*(?:(?P<stressed>[{stressed_vowels}])|[{vowels}])|[{consonants}]+')
+trans_syllable = re.compile(rf'[{consonants}]*(?:(?P<stressed>[{stressed_vowels}])|[{unstressed_vowels}])|[{consonants}]+')

@@ -17,8 +17,9 @@ softable_cons_ltrs = [c for c in consonant_ltrs if c not in hard_only_cons_ltrs]
 
 # Phonemes
 # (uppercase vowel phonemes are stressed, uppercase consonant phonemes are palatalized)
-vowels = 'ieaou'
-stressed_vowels = vowels.upper()
+unstressed_vowels = 'ieaou'
+stressed_vowels = unstressed_vowels.upper()
+vowels = unstressed_vowels + stressed_vowels
 sonorant_cons = 'ymnlr'
 paired_voiced_cons   = 'vbdzjgh'
 paired_unvoiced_cons = 'fptsckx'
@@ -37,11 +38,11 @@ def change(from_: str, to: str, also: Dict[str, str]={}) -> Callable[[str], str]
 
 # Transformations
 phonemize = change(
-    plain_vowel_ltrs + jot_vowel_ltrs + consonant_ltrs,
-    to=   vowels     +     vowels     + sonorant_cons + paired_unvoiced_cons + paired_voiced_cons,
+       plain_vowel_ltrs  + jot_vowel_ltrs    + consonant_ltrs,
+    to=unstressed_vowels + unstressed_vowels + sonorant_cons + paired_unvoiced_cons + paired_voiced_cons,
     also={'ц': 'ts', 'ч': 'TC', 'щ': 'C'}
 )
-reduct_less = change(vowels, to='iiaau')
-reduct_more = change(vowels, to='iiiiu')
+reduct_less = change(unstressed_vowels, to='iiaau')
+reduct_more = change(unstressed_vowels, to='iiiiu')
 voice = change(voiceable_cons, to=unvoiceable_cons)
 unvoice = change(unvoiceable_cons, to=voiceable_cons)
