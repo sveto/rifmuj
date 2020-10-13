@@ -5,7 +5,7 @@ import itertools as it
 import more_itertools as mit
 from sqlalchemy.orm import Session, sessionmaker
 from .phonetics.phonetizer import phonetize
-from .phonetics.rhymer import Rhyme, normalized_rhyme_distance
+from .phonetics.rhyme import Rhyme, normalized_rhyme_distance
 from .phonetics.accent import *
 from .data.data_model import engine, Word
 

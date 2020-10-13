@@ -4,7 +4,7 @@ import re
 import more_itertools as mit
 from data.data_model import Word
 from phonetics.phonetizer import phonetize
-from phonetics.rhymer import Rhyme
+from phonetics.rhyme import Rhyme
 from phonetics.accent import normalize_accented_spell, normalize_spell
 
 file_name = 'data/hagen-morph.txt'
