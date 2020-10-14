@@ -130,3 +130,8 @@ ul
    font-size: 125%;
    line-height: 150%;
 }
+
+.small
+{
+   font-size: 80%;
+}
