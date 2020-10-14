@@ -44,7 +44,7 @@ def lookup_word(query: str) -> LookupResult:
         normalized = normalize_accented_spell(query)
         is_accented = is_correctly_accented(normalized)
         spell = normalize_spell(normalized)
-        
+       
         words = get_words_by_spell(session, spell)
         
         # TODO: do something with the mess below

@@ -55,9 +55,10 @@ h1 img
    font-size: 300%;
    font-weight: normal;
    line-height: 80%;
+   color: #369;
 }
 
-.back
+.separated
 {
    margin-top: 30px;
 }

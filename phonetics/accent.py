@@ -27,7 +27,7 @@ def is_correctly_accented(accented_spell: str) -> bool:
 
 def get_accent_variants(spell: str) -> Iterable[str]:
     syllables = list(spell_syllable.finditer(spell))
-    if syllables[0]['vowel']:
+    if len(syllables) > 0 and syllables[0]['vowel']:
         for i, syllable in enumerate(s for s in syllables if s['vowel']):
             if syllable['vowel'] == 'е':
                 yield ''.join(s[0] + "'" if i == j else s[0] for j, s in enumerate(syllables))
