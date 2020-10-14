@@ -126,14 +126,14 @@ def group_by_lemma(words_with_dists: Iterable[Tuple[Word, float]]) -> List[List[
     lemmas = it.groupby(words_with_dists, lambda wd: wd[0].lemma_id)
     result = (group_word_forms([(yoficate_by_transcription(form.spell, form.trans), dist) for form, dist in forms_with_dists])
         for lemma, forms_with_dists in lemmas)
-    return list(sorted(result, key=lambda lemma: lemma[0].distance))
+    return list(sorted(result, key=lambda lemma: (lemma[0].distance, len(lemma[0].rhyme), lemma[0].rhyme)))
 
 def group_word_forms(forms_with_dists: List[Tuple[str, float]]) -> List[RhymeResult]:
     common_prefix_len = min(len(form) for form, _ in forms_with_dists)
     while not mit.all_equal(form[:common_prefix_len] for form, _ in forms_with_dists):
         common_prefix_len -=1
     
-    forms_with_dists.sort(key=lambda fd: fd[1])
+    forms_with_dists.sort(key=lambda fd: (fd[1], len(fd[0]), fd[0]))
     base_form = forms_with_dists[0]
     flex_forms = ((f'-{form[common_prefix_len:]}', dist) for form, dist in forms_with_dists[1:])
     
