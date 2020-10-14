@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from abc import ABC
 import itertools as it
 import more_itertools as mit
+from random import randrange
 from sqlalchemy.orm import Session, sessionmaker
 from .phonetics.phonetizer import phonetize
 from .phonetics.rhyme import Rhyme, normalized_rhyme_distance
@@ -35,8 +36,8 @@ Session = sessionmaker(bind=engine)
 def lookup_word(query: str) -> LookupResult:
     """Returns an object containing
     the prettified version of the input word,
-    a list of possible accented forms and a list of rhymes.
-    At least one of those lists is empty.
+    and either a list of possible accented forms if there are more than one
+    or a list of rhymes otherwise.
     """
     session = Session()
     try:
@@ -66,7 +67,6 @@ def lookup_word(query: str) -> LookupResult:
         # only one variant of accenting exists
         else:
             accented, word_list = words_by_accent[0]
-            print(f'len(word_list) = {len(word_list)}')
             # for now, just using the first word. TODO: use all words
             word = word_list[0]
             rhyming_words_with_dists = get_rhyming_words_with_dists(session, word)
@@ -76,6 +76,31 @@ def lookup_word(query: str) -> LookupResult:
             )
     finally:
         session.close()
+
+def lookup_random_word() -> LookupResultRhymes:
+    """Gets a random word from the db and returns an object containing
+    the prettified version of the word and a list of its rhymes.
+    """
+    session = Session()
+    try:
+        count = session.query(Word.word_id).count()
+        
+        while True:
+            random = randrange(count)
+            word = session.query(Word).offset(random).limit(1).one()
+            rhyming_words_with_dists = list(get_rhyming_words_with_dists(session, word))
+            if len(rhyming_words_with_dists) > 0:
+                break
+            # try again if there are no rhymes
+        
+        accented = get_accent(word)
+        return LookupResultRhymes(
+            prettify_accent_marks(accented),
+            group_by_lemma(rhyming_words_with_dists)
+        )
+    finally:
+        session.close()
+
 
 def create_word(spell: str, accented: str) -> Word:
     trans = phonetize(accented)

@@ -2,7 +2,7 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-from .lookup import lookup_word, LookupResultAccentVariants, LookupResultRhymes
+from .lookup import lookup_word, lookup_random_word, LookupResultAccentVariants, LookupResultRhymes
 
 class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
@@ -40,13 +40,14 @@ def results():
    
    return render_template("results.html", links=links, tables=tables, inputword=result.prettified_input_word)
 
-@app.errorhandler(404)
-def page_not_found(_):
-   return render_template("404.html"), 404
-
 @app.route("/random")
 def random():
-   # TODO: implement!
+   result = lookup_random_word()
+   tables = [', '.join(f'{r.rhyme} ({r.distance:.2f})' for r in lemma) for lemma in result.rhymes]
+   return render_template("results.html", links=[], tables=tables, inputword=result.prettified_input_word)
+
+@app.errorhandler(404)
+def page_not_found(_):
    return render_template("404.html"), 404
 
 @app.route("/about")
