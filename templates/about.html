@@ -1,12 +1,23 @@
 {% extends "base.html" %}
 {% block body %}
-<div class="simpleText">
-    <br>
-    <h2>О сайте</h2>
-    <p>Здесь будет рифмовник. Вводить слова с буквой <em>ё</em>, ударение во всех случаях,
-        в том числе на <em>ё</em>, обозначать подчёркиванием или апострофом после буквы, или акутом над буквой, например:
-        <em>запечё_н</em>, <em>переку'с</em>, <em>мо́шка</em>.</p>
-    <br>
-</div>
+
+   <div class="simpleText">
+      <h1>
+         <a href="{{ url_for('index') }}">
+            <img alt="..у́й" src="{{ url_for('static', filename='favicon.svg') }}" />
+            <p>рифмуй!</p>
+         </a>
+      </h1>
+      
+      <p>Здесь будет рифмовник.</p>
+      <p>Мы делаем его вот тут:</p>
+      <p>
+         <a href="https://github.com/sveto/rifmuj">github.com/sveto/rifmuj</a>
+      </p>
+      
+      <p class="back">
+         <a href="{{ url_for('index') }}">Вернуться на главную</a>
+      </p>
+   </div>
 
 {% endblock %}

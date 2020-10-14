@@ -20,14 +20,14 @@ class LookupResult(ABC):
     prettified_input_word: str
 
 @dataclass
-class LookupResultAccentVariants(LookupResult):
-    accent_variants: List[str]
+class LookupResultVariants(LookupResult):
+    variants: List[str]
 
 @dataclass
 class LookupResultRhymes(LookupResult):
     rhymes: List[List[RhymeResult]]
 
-LookupResult.register(LookupResultAccentVariants)
+LookupResult.register(LookupResultVariants)
 LookupResult.register(LookupResultRhymes)
 
 
@@ -60,7 +60,7 @@ def lookup_word(query: str) -> LookupResult:
         
         # more than one variant of accenting exist
         if len(words_by_accent) > 1:
-            return LookupResultAccentVariants(
+            return LookupResultVariants(
                 prettify_accent_marks(spell),
                 [prettify_accent_marks(accented) for accented, _ in words_by_accent]
             )

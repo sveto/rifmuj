@@ -1,47 +1,21 @@
 {% extends "base.html" %}
 {% block body %}
 
-<div id="innerContent">
-<form id="search" role="search" action="{{ request.script_root }}/lookup">
-   <table id="header">
-      <tr>
-         <td id="left">
-            <a href="/about">Что это за сайт?</a>
-         </td>
-         <td id="right">
-            <a href="/random">Случайное слово</a>
-         </td>   
-      </tr>
-   </table>
-   <table id="main">
-      <tr>
-         <td>
-            <div id="searchBox">
-               <input type="search" id="word" name="word" required autofocus placeholder="Введите слово с ударением" aria-label="Введите слово с ударением" value="{{ request.args.get('word') or "" }}"/>
-               <input type="submit" id="button" value="Искать!"/>
-            </div>
-         </td>
-      </tr>
-      <tr>
-         <td>
-            <div id="options">
-               <fieldset>
-                  <legend>Параметры:</legend><br>
-                  <label><input type="checkbox" name="xj" value="true" {% if request.args.get('xj') == "true" %}checked{% endif %}>игнор конечных согласных (клятый~вентилятор)</label><br>
-                  <label><input type="checkbox" name="zv" value="true" {% if request.args.get('zv') == 'true' %}checked{% endif %}>игнор звонкости/глухости (ленты~бренды)</label><br>
-                  <label><input type="checkbox" name="uu" value="true" {% if request.args.get('uu') == 'true' %}checked{% endif %}>игнор безударного "у" (картина~гардину)</label><br>
-                  <label><input type="checkbox" name="yy" value="true" {% if request.args.get('yy') == 'true' %}checked{% endif %}>игнор безударного "ы" (картина~гардины)</label><br>
-                  <label><input type="number" name="nu" min="0" max="10" aria-label="Количество" value="{% set nu = request.args.get('nu')|int(0) %}{{ 0 if nu < 0 else (10 if nu > 10 else nu) }}">лишних звуков перед рифмой</label>
-               </fieldset>
-            </div>
-         </td>
-      </tr>
-   </table>
-</form>
-<div id="results">
-   {% block results %}
-   {% endblock %}
-</div>
-<script src="{{ url_for('static', filename='index.js') }}"></script>
-</div>
+   <header>
+      <div class="links">
+         <a href="/about">Что это за сайт?</a>
+         <a class="right" href="/random">Случайное слово</a>
+      </div>
+      
+      <form id="search" role="search" action="{{ request.script_root }}/lookup">
+         <input type="search" name="word" required autofocus placeholder="Введите слово" aria-label="Введите слово" value="{{ request.args.get('word') or '' }}" onfocus="this.select()" />
+         <input type="submit" value="рифмуй!" />
+      </form>
+   </header>
+
+   <div class="results">
+      {% block results %}
+      {% endblock %}
+   </div>
+
 {% endblock %}

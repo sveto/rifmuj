@@ -1,0 +1,35 @@
+{% extends "search.html" %}
+{% block title %}{{ input_word }} – {% endblock %}
+
+{% block results %}
+
+{% set n = rhymes|length %}
+{% if n == 0 %}
+   <p>
+      Рифмы на слово <i>{{ input_word }}</i> не найдены.
+   </p>
+{% else %}
+   <p>
+   {% if (n - 1) % 10 >= 4 or 10 <= n % 100 < 20 %}
+      Найдено <b>{{ n }}</b> рифм
+   {% elif n % 10 > 1 %}
+      Найдены <b>{{ n }}</b> рифмы
+   {% else %}
+      Найдена <b>{{ n }}</b> рифма
+   {% endif %}
+      на слово <i>{{ input_word }}</i>:
+   </p>
+
+   <ul>
+   {% for lemma in rhymes %}
+      <li>
+      {% for form in lemma %}
+         {% set opacity = 1.0 - 0.8 * form.distance %}
+         <span title="{{ form.distance|round(2) }}" style="opacity: {{ opacity|round(2) }}">{{ form.rhyme }}{% if not loop.last %},{% endif %}</span>
+      {% endfor %}
+      </li>
+   {% endfor %}
+   </ul>
+{% endif %}
+
+{% endblock %}

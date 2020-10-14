@@ -1,0 +1,18 @@
+{% extends "search.html" %}
+{% block title %}{{ input_word }} – {% endblock %}
+
+{% block results %}
+
+   <p>
+      Выберите, пожалуйста, из вариантов:
+   </p>
+
+   <ul>
+   {% for variant in variants %}
+      <li>
+         <a href="/lookup?word={{ variant }}">{{ variant }}</a>
+      </li>
+   {% endfor %}
+   </ul>
+
+{% endblock %}

@@ -2,7 +2,7 @@ import os
 from werkzeug.routing import PathConverter
 from flask import (Flask, redirect, render_template,
                    request, send_from_directory, url_for) # type: ignore
-from .lookup import lookup_word, lookup_random_word, LookupResultAccentVariants, LookupResultRhymes
+from .lookup import lookup_word, lookup_random_word, LookupResultVariants, LookupResultRhymes
 
 class Query(PathConverter):
    regex = ".*?" # everything PathConverter accepts but also leading slashes
@@ -33,18 +33,15 @@ def results():
    
    result = lookup_word(word)
    
-   # TODO: make separate templates
-   
-   links = result.accent_variants if isinstance(result, LookupResultAccentVariants) else []
-   tables = [', '.join(f'{r.rhyme} ({r.distance:.2f})' for r in lemma) for lemma in result.rhymes] if isinstance(result, LookupResultRhymes) else []
-   
-   return render_template("results.html", links=links, tables=tables, inputword=result.prettified_input_word)
+   if isinstance(result, LookupResultVariants):
+      return render_template("variants.html", variants=result.variants, input_word=result.prettified_input_word)
+   else:
+      return render_template("rhymes.html", rhymes=result.rhymes, input_word=result.prettified_input_word)
 
 @app.route("/random")
 def random():
    result = lookup_random_word()
-   tables = [', '.join(f'{r.rhyme} ({r.distance:.2f})' for r in lemma) for lemma in result.rhymes]
-   return render_template("results.html", links=[], tables=tables, inputword=result.prettified_input_word)
+   return render_template("rhymes.html", rhymes=result.rhymes, input_word=result.prettified_input_word)
 
 @app.errorhandler(404)
 def page_not_found(_):
