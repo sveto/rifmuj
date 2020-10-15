@@ -31,6 +31,8 @@ def test_normalize_spell(input: str, output: str) -> None:
     ("го'ры",   "го́ры"),
     ("горы'",   "горы́"),
     ("тё'ща",   "тёща"),
+    ("ко'т",    "кот"),
+    ("ме'л",    "ме́л"),
 ])
 def test_prettify_accent_marks(input: str, output: str) -> None:
     assert prettify_accent_marks(input) == output

@@ -18,9 +18,10 @@ def normalize_spell(word: str) -> str:
     return word
 
 def prettify_accent_marks(word: str) -> str:
-    syllable_count = mit.ilen(s for s in spell_syllable.finditer(word) if s['vowel'])
+    syllables = [s for s in spell_syllable.finditer(word) if s['vowel']]
+    leave_accent = len(syllables) != 1 or syllables[0]['vowel'] == 'е'
     word = yo_with_optional_accent.sub('ё', word)
-    return word.replace("'", '\N{COMBINING ACUTE ACCENT}' if syllable_count > 1 else '')
+    return word.replace("'", '\N{COMBINING ACUTE ACCENT}' if leave_accent else '')
 
 def is_correctly_accented(accented_spell: str) -> bool:
     return bool(correctly_accented.match(accented_spell))
