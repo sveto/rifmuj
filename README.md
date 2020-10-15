@@ -4,8 +4,7 @@ This will be a Russian rhyme dictionary.
 
 ## Requirements
 
-* Python 3.7 or later
-* TypeScript
+* Python 3.8 or later
 * Flask
 * Sqlalchemy
 
@@ -18,12 +17,6 @@ pip install -r requirements.txt
 sudo apt install node-typescript
 ```
 
-* Generate JavaScript code from the TypeScript source.
-
-```bash
-./tsc
-```
-
 * Download the dictionary source file and put it into the `data` folder.
 
 <https://drive.google.com/file/d/1fSy3TUcsM0iFull1v9dW_FkK06ex7MH9>
@@ -32,7 +25,7 @@ sudo apt install node-typescript
 * Generate the DB from this file.
 
 ```bash
-python3 data/db_generation.py
+python3 db_generation.py
 ```
 
 * After that, just run the web app.
