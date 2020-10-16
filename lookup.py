@@ -6,7 +6,7 @@ import more_itertools as mit
 from random import randrange
 from sqlalchemy.orm import Session, sessionmaker
 from .phonetics.phonetizer import phonetize
-from .phonetics.rhyme import Rhyme, normalized_rhyme_distance
+from .phonetics.rhyme import get_basic_rhyme, normalized_rhyme_distance
 from .phonetics.accent import *
 from .data.data_model import engine, Word
 
@@ -104,8 +104,7 @@ def lookup_random_word() -> LookupResultRhymes:
 
 def create_word(spell: str, accented: str) -> Word:
     trans = phonetize(accented)
-    rhyme = Rhyme.from_transcription(trans)
-    basic_rhyme = rhyme.get_basic_rhyme() if rhyme is not None else ''
+    basic_rhyme = get_basic_rhyme(trans)
     return Word(0, 0, spell, trans, basic_rhyme, '')
 
 def get_words_by_spell(session: Session, spell: str) -> Iterable[Word]:

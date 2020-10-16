@@ -4,7 +4,7 @@ import re
 import more_itertools as mit
 from data.data_model import Word
 from phonetics.phonetizer import phonetize
-from phonetics.rhyme import Rhyme
+from phonetics.rhyme import get_basic_rhyme
 from phonetics.accent import normalize_accented_spell, normalize_spell
 
 file_name = 'data/hagen-morph.txt'
@@ -80,9 +80,8 @@ def get_articles() -> Iterable[Article]:
 def get_article_words(article: Article) -> Iterable[Word]:
     for row in article.rows:
         trans = phonetize(row.accented_spell)
-        rhyme = Rhyme.from_transcription(trans)
-        if rhyme is not None:
-            basic_rhyme = rhyme.get_basic_rhyme()
+        basic_rhyme = get_basic_rhyme(trans)
+        if basic_rhyme:
             gram = ''.join(row.gram)
             yield Word(row.id, article.id, row.spell, trans, basic_rhyme, gram)
 

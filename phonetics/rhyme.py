@@ -28,16 +28,19 @@ class Rhyme:
     def from_transcription(cls, transcription: str) -> Optional[Rhyme]:
         parts = split_by_stress.match(transcription)
         return cls(parts) if parts is not None else None
-    
-    def get_basic_rhyme(self) -> str:
-        posttonic = ''.join(unvoice(s.consonants) + 'i' for s in self.posttonic_syllables)
-        if posttonic:
-            return self.stressed_syllable.vowel + posttonic
-        elif self.final_consonants:
-            return self.stressed_syllable.vowel + self.final_consonants
-        else:
-            return self.stressed_syllable.consonants[-1:] + self.stressed_syllable.vowel
 
+
+def get_basic_rhyme(transcription: str) -> str:
+    rhyme = Rhyme.from_transcription(transcription)
+    if rhyme is None:
+        return ''
+    posttonic = ''.join(unvoice(s.consonants) + 'i' for s in rhyme.posttonic_syllables)
+    if posttonic:
+        return rhyme.stressed_syllable.vowel + posttonic
+    elif rhyme.final_consonants:
+        return rhyme.stressed_syllable.vowel + rhyme.final_consonants
+    else:
+        return rhyme.stressed_syllable.consonants[-1:] + rhyme.stressed_syllable.vowel
 
 def normalized_rhyme_distance(trans1: str, trans2: str) -> float:
     """Returns the rhyme distance between two transcriptions
