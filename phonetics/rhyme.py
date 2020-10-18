@@ -34,13 +34,20 @@ def get_basic_rhyme(transcription: str) -> str:
     rhyme = Rhyme.from_transcription(transcription)
     if rhyme is None:
         return ''
-    posttonic = ''.join(unvoice(s.consonants) + 'i' for s in rhyme.posttonic_syllables)
-    if posttonic:
-        return rhyme.stressed_syllable.vowel + posttonic
+    
+    stressed_vowel = rhyme.stressed_syllable.vowel
+    posttonic_syl_count = len(rhyme.posttonic_syllables)
+    
+    if posttonic_syl_count > 0:
+        posttonic_cluster = rhyme.posttonic_syllables[0].consonants
+        cluster_last_cons = unvoice(posttonic_cluster[-1:])
+        cluster_other_cons = '_' if len(posttonic_cluster) > 1 else ''
+        return stressed_vowel + cluster_other_cons + cluster_last_cons + str(posttonic_syl_count)
     elif rhyme.final_consonants:
-        return rhyme.stressed_syllable.vowel + rhyme.final_consonants
+        return stressed_vowel + rhyme.final_consonants
     else:
-        return rhyme.stressed_syllable.consonants[-1:] + rhyme.stressed_syllable.vowel
+        pretonic_cons = rhyme.stressed_syllable.consonants[-1:]
+        return pretonic_cons + stressed_vowel
 
 def normalized_rhyme_distance(trans1: str, trans2: str) -> float:
     """Returns the rhyme distance between two transcriptions
