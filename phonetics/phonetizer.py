@@ -145,14 +145,15 @@ phon_transforms = [
     # consonant clusters
     PhonTransform.rules(
         r'''[tT]Sa\b          # reflexive verb endings
+           |tsts|TCTC         # cluster simplification
            |[sSzZcj]TC        # cluster simplification
            |[sSzZ][tTdD][nN]  # cluster simplification
          ''',
         # reflexive verb endings
         {f'{t}Sa': 'tsa' for t in 'tT'},
-        # complex consonants
-        {cc: 'C' for cc in ['sTC', 'STC', 'zTC', 'ZTC', 'cTC', 'jTC']},
         # cluster simplification:
+        {'tsts': 'ts', 'TCTC': 'TC'},
+        {cc: 'C' for cc in ['sTC', 'STC', 'zTC', 'ZTC', 'cTC', 'jTC']},
         {f'{s}{t}{n}': f'{s}{n}' for s in 'sSzZ' for t in 'tTdD' for n in 'nN'}
     ),
     
