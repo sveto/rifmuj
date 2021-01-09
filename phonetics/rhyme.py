@@ -40,14 +40,14 @@ def get_basic_rhyme(transcription: str) -> str:
     
     if posttonic_syl_count > 0:
         posttonic_cluster = rhyme.posttonic_syllables[0].consonants
-        cluster_last_cons = unvoice(posttonic_cluster[-1:])
+        cluster_last_cons = re.sub("[lnm]", "r", unvoice(posttonic_cluster[-1:]))
         cluster_other_cons = '_' if len(posttonic_cluster) > 1 else ''
         return stressed_vowel + cluster_other_cons + cluster_last_cons + str(posttonic_syl_count)
     elif rhyme.final_consonants:
         return stressed_vowel + rhyme.final_consonants
     else:
         pretonic_cons = rhyme.stressed_syllable.consonants[-1:]
-        return pretonic_cons + stressed_vowel
+        return unvoice(pretonic_cons) + stressed_vowel
 
 def normalized_rhyme_distance(trans1: str, trans2: str) -> float:
     """Returns the rhyme distance between two transcriptions
@@ -101,7 +101,13 @@ def phon_distance(ph1: str, ph2: str, allow_wrong_voiceness: bool=False) -> Dist
 
 def cluster_distance(cl1: str, cl2: str, allow_wrong_voiceness: bool=False) -> Distance:
     if len(cl1) != len(cl2):
-        return Distance(1.0)
+        if len(cl1) > 0 and len(cl2) > 0:
+            clusters = sorted([cl1, cl2], key=len, reverse=True)
+            while len(clusters[0]) > len(clusters[1]):
+                clusters[0] = clusters[0][1:]
+            return cluster_distance(*clusters, allow_wrong_voiceness) * 1.2
+        else:
+            return Distance(1.0)
     elif len(cl1) == 0:
         return Distance(0.0)
     else:
@@ -114,12 +120,12 @@ def syllable_distance(s1: Syllable, s2: Syllable, allow_wrong_voiceness: bool=Fa
 
 # constants:
 
-wrong_voiceness_distance = 0.5  # in [0; 1]
+wrong_voiceness_distance = 0.3  # in [0; 1]
 vowel_to_cons_weight     = 1.5
-pretonic_exp_base        = 0.7  # <= 1
-pretonic_weight          = 0.2
-stressed_syl_cons_weight = 0.8
-posttonic_weight         = 1.2
+pretonic_exp_base        = 0.5  # <= 1
+pretonic_weight          = 0.05
+stressed_syl_cons_weight = 10.5 # seems to be OK
+posttonic_weight         = 30.5 # seems to be OK
 final_cons_weight        = 1.0
 
 
