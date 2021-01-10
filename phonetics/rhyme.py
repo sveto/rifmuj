@@ -101,11 +101,12 @@ def phon_distance(ph1: str, ph2: str, allow_wrong_voiceness: bool=False) -> Dist
 
 def cluster_distance(cl1: str, cl2: str, allow_wrong_voiceness: bool=False) -> Distance:
     if len(cl1) != len(cl2):
-        if len(cl1) > 0 and len(cl2) > 0:
-            clusters = sorted([cl1, cl2], key=len, reverse=True)
-            while len(clusters[0]) > len(clusters[1]):
-                clusters[0] = clusters[0][1:]
-            return cluster_distance(*clusters, allow_wrong_voiceness) * 1.2
+        lenmin, lenmax = sorted([len(cl1), len(cl2)])
+        if lenmin >=2:
+            coeff = 1.6 ** lenmax
+            cl1 = cl1[0] + cl1[-1]
+            cl2 = cl2[0] + cl2[-1]
+            return cluster_distance(cl1, cl2, allow_wrong_voiceness) * coeff
         else:
             return Distance(1.0)
     elif len(cl1) == 0:
@@ -122,11 +123,11 @@ def syllable_distance(s1: Syllable, s2: Syllable, allow_wrong_voiceness: bool=Fa
 
 wrong_voiceness_distance = 0.3  # in [0; 1]
 vowel_to_cons_weight     = 1.5
-pretonic_exp_base        = 0.5  # <= 1
+pretonic_exp_base        = 0.4  # <= 1
 pretonic_weight          = 0.05
-stressed_syl_cons_weight = 10.5 # seems to be OK
-posttonic_weight         = 30.5 # seems to be OK
-final_cons_weight        = 1.0
+stressed_syl_cons_weight = 0.33 
+posttonic_weight         = 0.99
+final_cons_weight        = 1.3
 
 
 # regexps:

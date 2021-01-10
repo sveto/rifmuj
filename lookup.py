@@ -88,9 +88,10 @@ def lookup_random_word() -> LookupResultRhymes:
         while True:
             random = randrange(count)
             word = session.query(Word).offset(random).limit(1).one()
-            rhyming_words_with_dists = list(get_rhyming_words_with_dists(session, word))
-            if len(rhyming_words_with_dists) > 0:
-                break
+            if not any(word.rhyme.endswith(num) for num in "456789"):
+                rhyming_words_with_dists = list(get_rhyming_words_with_dists(session, word))
+                if len(rhyming_words_with_dists) > 0:
+                    break
             # try again if there are no rhymes
         
         accented = get_accent(word)
