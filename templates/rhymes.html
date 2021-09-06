@@ -3,6 +3,8 @@
 
 {% block results %}
 
+<div class="results">
+   
 {% set n = rhymes|length %}
 {% if n == 0 %}
    <p>
@@ -27,13 +29,27 @@
       {% for form in lemma -%}
          {% set opacity = 1.0 - 0.8 * form.distance -%}
          <span {% if not loop.first %}class="small" {% endif -%}
-               title="{{ form.distance|round(2) }}" style="opacity: {{ opacity|round(2) }}">
-            {%- if not loop.first -%}, {% endif %}{{ form.rhyme -}}
+               data-orth="{{ form.orthogaphy }}"
+               data-end="{{ form.ending }}"
+               data-trans="{{ form.transcription }}"
+               title="{{ form.distance|round(2) }}"
+               style="opacity: {{ opacity|round(2) }}">
+            {%- if loop.first -%}{{ form.orthogaphy }}{%- else -%}, {{ form.ending }}{%- endif -%}
          </span>
       {%- endfor %}
       </li>
    {% endfor %}
    </ul>
+{% endif %}
+
+</div>
+
+{% if n > 0 %}
+   <footer>
+      <div id="filter">
+         <input type="text" placeholder="фильтр" aria-label="фильтр" /><button type="button" title="очистить">×</button>
+      </div>
+   </footer>
 {% endif %}
 
 {% endblock %}
