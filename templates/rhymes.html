@@ -47,7 +47,9 @@
 {% if n > 0 %}
    <footer>
       <div id="filter">
-         <input type="text" placeholder="фильтр" aria-label="фильтр" /><button type="button" title="очистить">×</button>
+         <input type="text" placeholder="фильтр" aria-label="фильтр" onfocus="this.select()" />
+         <button id="applyFilter" type="button" title="применить">▸</button>
+         <button id="clearFilter" type="button" title="очистить">×</button>
       </div>
    </footer>
 {% endif %}

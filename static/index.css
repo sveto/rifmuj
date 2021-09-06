@@ -151,9 +151,15 @@ footer
    border-radius: 0;
    background: #369;
    color: #fff;
-   padding: 0 4px 1px;
+   padding: 0 0 1px;
+   width: 22px;
    font-size: 100%;
    cursor: pointer;
+}
+
+#clearFilter
+{
+   margin-left: 1px;
 }
 
 .error

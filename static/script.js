@@ -3,8 +3,11 @@
 $(() =>
 {
   const filterInput = $('#filter input');
-  const filterClearButton = $('#filter button');
-  filterInput.on('input', () => onFilterChange(filterInput));
+  const filterApplyButton = $('#applyFilter');
+  const filterClearButton = $('#clearFilter');
+  
+  filterInput.keypress(e => { if((e.keyCode || e.which) === 13) onFilterChange(filterInput); });
+  filterApplyButton.click(() => onFilterChange(filterInput));
   filterClearButton.click(() => { filterInput.val(''); onFilterChange(filterInput) });
 });
 
