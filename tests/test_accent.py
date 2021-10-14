@@ -1,6 +1,6 @@
 import pytest
-from phonetics.accent import *
-from phonetics.phonetizer import phonetize
+from ..phonetics.accent import *
+from ..phonetics.phonetizer import phonetize
 
 @pytest.mark.parametrize('input, output', [
     ("му'ка",       "му'ка"),

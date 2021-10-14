@@ -1,5 +1,5 @@
 import pytest
-from phonetics.phonetizer import phonetize
+from ..phonetics.phonetizer import phonetize
 
 @pytest.mark.parametrize('accented_spell, transcription', [
     # jot vowels and signs
