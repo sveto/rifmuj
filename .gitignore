@@ -4,7 +4,9 @@ __pycache__
 .vscode
 .ipynb_checkpoints
 data/hagen-morph.txt
+data/hagen-morph-utf8.txt
 data/database.sqlite
 data/database.sqlite.backup
+data/database.sqlite-journal
 profile*.dat
 static/index.js

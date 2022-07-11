@@ -6,6 +6,7 @@ from data.data_model import Word
 from phonetics.phonetizer import phonetize
 from phonetics.rhyme import get_basic_rhyme
 from phonetics.accent import normalize_accented_spell, normalize_spell
+from morphology.features import morph_abbr
 
 file_name = 'data/hagen-morph.txt'
 file_encoding = 'windows-1251'
@@ -25,7 +26,7 @@ class Row:
             id=int(parts[-1].strip()),
             spell=normalize_spell(parts[0].strip()),
             accented_spell=normalize_accented_spell(parts[2].strip()),
-            gram=set(gram_abbr[g] for g in parts[1].split() if g in gram_abbr)
+            gram=set(morph_abbr[g] for g in parts[1].split() if g in morph_abbr)
         )
 
 class Article:
@@ -84,75 +85,3 @@ def get_article_words(article: Article) -> Iterable[Word]:
         if basic_rhyme:
             gram = ''.join(row.gram)
             yield Word(row.id, article.id, row.spell, trans, basic_rhyme, gram)
-
-# Uncomment only what you need
-gram_abbr: Dict[str, str] = {
-    # 'сущ'   : 'Nn',
-    # 'прл'   : 'Ad',
-    # 'гл'    : 'Vb',
-    # 'нар'   : 'Av',
-    # 'мест'  : 'Pn',
-    # 'числ'  : 'Nu',
-    # 'прч'   : 'Pc',
-    # 'дееп'  : 'Tg',
-    # 'межд'  : 'Ij',
-    # 'предл' : 'Pp',
-    # 'союз'  : 'Cj',
-    # 'част'  : 'Pi',
-    # 'предик': 'Pd',
-    # 'ввод'  : 'Ph',
-    # 'нескл' : 'Id',
-    # 'им'    : 'No',
-    # 'род'   : 'Ge',
-    # 'дат'   : 'Da',
-    # 'вин'   : 'Ac',
-    # 'тв'    : 'In',
-    # 'пр'    : 'Lo',
-    # 'парт'  : 'Pa',
-    # 'счет'  : 'Cn',
-    # 'зват'  : 'Vo',
-    # 'ед'    : 'Sg',
-    # 'мн'    : 'Pl',
-    # 'муж'   : 'Ma',
-    # 'жен'   : 'Fe',
-    # 'ср'    : 'Ne',
-    # 'общ'   : 'Co',
-    # 'неод'  : 'Ia',
-    # 'одуш'  : 'An',
-    # 'крат'  : 'Br',
-    # 'сравн' : 'Cm',
-    # 'прев'  : 'Sl',
-    # 'неизм' : 'Al',
-    # 'инф'   : 'If',
-    # 'пов'   : 'Ip',
-    # 'прош'  : 'Pt',
-    # 'наст'  : 'Pr',
-    # 'буд'   : 'Fu',
-    # '1-е'   : '1p',
-    # '2-е'   : '2p',
-    # '3-е'   : '3p',
-    # 'несов' : 'Im',
-    # 'сов'   : 'Pf',
-    # '2вид'  : 'Ba',
-    # 'безл'  : 'Il',
-    # 'непер' : 'It',
-    # 'воз'   : 'Rf',
-    # 'перех' : 'Tr',
-    # 'пер/не': 'Ti',
-    # 'страд' : 'Pv',
-    # 'неопр' : 'Ie',
-    # 'кол'   : 'Cr',
-    # 'поряд' : 'Or',
-    # 'собир' : 'Cl',
-    # 'вопр'  : 'Qs',
-    # 'опред' : 'Df',
-    # 'обст'  : 'Aj',
-    # 'кач'   : 'Qu',
-    # 'спос'  : 'Md',
-    # 'степ'  : 'Dg',
-    # 'врем'  : 'Tm',
-    # 'места' : 'Lc',
-    # 'напр'  : 'Dr',
-    # 'причин': 'Cs',
-    # 'цель'  : 'Oj',
-}
